@@ -3,6 +3,7 @@ package com.vinicius.coretech.controller;
 import com.vinicius.coretech.DTO.Request.LoginUserRequest;
 import com.vinicius.coretech.DTO.Request.RegisterUserRequest;
 import com.vinicius.coretech.DTO.Response.AuthUserResponse;
+import com.vinicius.coretech.DTO.Response.TokenPairResponse;
 import com.vinicius.coretech.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -29,9 +32,19 @@ public class AuthController {
         return authService.login(loginUserRequest.email(), loginUserRequest.password());
     }
 
+    @PostMapping("/refresh-token")
+    public TokenPairResponse refresh(@RequestBody Map<String, String> body) {
+        return authService.refresh(body.get("refreshToken"));
+    }
+
+    @PostMapping("/logout")
+    public String logout(@RequestBody Map<String, String> body) {
+        return authService.logout(body.get("refreshToken"));
+    }
+
     @GetMapping("/user-test")
     @PreAuthorize("hasRole('USER')")
-    public String testAuth() {
+    public String testUserAuth() {
         return "You are an USER.";
     }
 

@@ -41,6 +41,8 @@ public class SecurityConfiguration {
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/register",
             "/auth/login",
+            "/auth/refresh-token",
+            "/auth/logout",
             "/h2-console/**"
     };
 
