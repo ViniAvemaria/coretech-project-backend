@@ -1,13 +1,14 @@
 package com.vinicius.coretech.service;
 
 import com.vinicius.coretech.DTO.Response.AuthUserResponse;
-import com.vinicius.coretech.DTO.Response.TokenPairResponse;
+import com.vinicius.coretech.DTO.Response.TokenResponse;
 import com.vinicius.coretech.entity.RefreshToken;
 import com.vinicius.coretech.entity.Role;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.repository.RefreshTokenRepository;
 import com.vinicius.coretech.repository.RoleRepository;
 import com.vinicius.coretech.repository.UserRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +18,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Service
@@ -50,28 +53,41 @@ public class AuthService {
         return "User registered successfully";
     }
 
-    public AuthUserResponse login(String email, String password) {
-
+    public AuthUserResponse login(String email, String password, HttpServletResponse response) {
         try {
-            User user = userRepository.findByEmail(email).orElseThrow(() -> new IllegalStateException("User not found"));
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new IllegalStateException("User not found"));
 
-            Authentication auth = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(email, password));
-
-            TokenPairResponse tokens = tokenService.generateTokens(auth);
-            refreshTokenRepository.save(RefreshToken.builder()
-                    .token(tokens.refreshToken())
-                    .expiresAt(tokens.refreshTokenExpiration())
-                    .user(user)
-                    .build()
+            Authentication auth = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, password)
             );
 
-            return AuthUserResponse.from(user, tokens);
+            List<RefreshToken> activeTokens = refreshTokenRepository.findAllByUserAndRevokedFalse(user);
+            for (RefreshToken token : activeTokens) {
+                token.setRevoked(true);
+            }
+            refreshTokenRepository.saveAll(activeTokens);
+
+            TokenResponse tokens = tokenService.generateTokens(auth, response);
+            refreshTokenRepository.save(
+                    RefreshToken.builder()
+                            .token(tokens.refreshToken())
+                            .expiresAt(tokens.refreshTokenExpiration())
+                            .user(user)
+                            .build()
+            );
+
+            deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
+
+            return AuthUserResponse.from(user, tokens.accessToken());
         } catch (AuthenticationException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public TokenPairResponse refresh(String token) {
+    public Map<String, String> refresh(String token, HttpServletResponse response) {
+        Map<String, String> accessTokenResponse = new HashMap<>();;
+
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new IllegalStateException("Refresh token not found"));
 
@@ -90,7 +106,8 @@ public class AuthService {
                 null,
                 user.getAuthorities()
         );
-        TokenPairResponse tokens = tokenService.generateTokens(auth);
+        TokenResponse tokens = tokenService.generateTokens(auth, response);
+        accessTokenResponse.put("accessToken", tokens.accessToken());
 
         RefreshToken newRefreshToken = RefreshToken.builder()
                 .token(tokens.refreshToken())
@@ -101,7 +118,7 @@ public class AuthService {
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
 
-        return tokens;
+        return accessTokenResponse;
     }
 
     public String logout(String token) {

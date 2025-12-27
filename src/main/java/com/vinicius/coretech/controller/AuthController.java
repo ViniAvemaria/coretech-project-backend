@@ -3,10 +3,11 @@ package com.vinicius.coretech.controller;
 import com.vinicius.coretech.DTO.Request.LoginUserRequest;
 import com.vinicius.coretech.DTO.Request.RegisterUserRequest;
 import com.vinicius.coretech.DTO.Response.AuthUserResponse;
-import com.vinicius.coretech.DTO.Response.TokenPairResponse;
 import com.vinicius.coretech.service.AuthService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -28,18 +29,18 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public AuthUserResponse login(@RequestBody LoginUserRequest loginUserRequest) {
-        return authService.login(loginUserRequest.email(), loginUserRequest.password());
+    public AuthUserResponse login(@RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
+        return authService.login(loginUserRequest.email(), loginUserRequest.password(), response);
     }
 
     @PostMapping("/refresh-token")
-    public TokenPairResponse refresh(@RequestBody Map<String, String> body) {
-        return authService.refresh(body.get("refreshToken"));
+    public Map<String, String> refresh(@CookieValue("refreshToken") String refreshToken, HttpServletResponse response) {
+        return authService.refresh(refreshToken, response);
     }
 
     @PostMapping("/logout")
-    public String logout(@RequestBody Map<String, String> body) {
-        return authService.logout(body.get("refreshToken"));
+    public String logout(@CookieValue("refreshToken") String refreshToken) {
+        return authService.logout(refreshToken);
     }
 
     @GetMapping("/user-test")

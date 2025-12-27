@@ -12,10 +12,10 @@ public record AuthUserResponse(
         String lastName,
         String email,
         Set<String> roles,
-        TokenPairResponse tokens
+        String accessToken
 ) {
 
-    public static AuthUserResponse from(User user, TokenPairResponse tokens) {
+    public static AuthUserResponse from(User user, String accessToken) {
         return new AuthUserResponse(
                 user.getId(),
                 user.getFirstName(),
@@ -25,7 +25,7 @@ public record AuthUserResponse(
                         .stream()
                         .map(GrantedAuthority::getAuthority)
                         .collect(Collectors.toSet()),
-                tokens
+                accessToken
         );
     }
 }
