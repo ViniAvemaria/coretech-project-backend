@@ -1,12 +1,14 @@
 package com.vinicius.coretech.advice;
 
 import com.vinicius.coretech.DTO.Response.ApiError;
+import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -15,6 +17,17 @@ import java.time.Instant;
 
 @RestControllerAdvice
 public class ExceptionAdvice {
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleException(Exception ex, HttpServletRequest request) {
+        ApiError error = new ApiError(
+                "InternalServerError",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ApiError> handleNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
@@ -60,14 +73,25 @@ public class ExceptionAdvice {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiError> handleException(Exception ex, HttpServletRequest request) {
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ApiError> handleMalformedJson(HttpMessageNotReadableException ex, HttpServletRequest request) {
         ApiError error = new ApiError(
-                "InternalServerError",
+                "BadRequest",
+                "Malformed JSON request",
+                request.getRequestURI(),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<ApiError> handleBadRequest(BadRequestException ex, HttpServletRequest request) {
+        ApiError error = new ApiError(
+                "BadRequest",
                 ex.getMessage(),
                 request.getRequestURI(),
                 Instant.now()
         );
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 }

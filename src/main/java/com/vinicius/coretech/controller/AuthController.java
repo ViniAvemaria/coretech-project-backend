@@ -4,6 +4,7 @@ import com.vinicius.coretech.DTO.Request.LoginUserRequest;
 import com.vinicius.coretech.DTO.Request.RegisterUserRequest;
 import com.vinicius.coretech.DTO.Response.ApiResponse;
 import com.vinicius.coretech.DTO.Response.AuthUserResponse;
+import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -37,13 +38,24 @@ public class AuthController {
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<Map<String, String>>> refresh(@CookieValue("refreshToken") String refreshToken, HttpServletResponse response) {
+    public ResponseEntity<ApiResponse<Map<String, String>>> refresh(
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse response
+    ) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BadRequestException("Refresh token cookie is missing");
+        }
+
         Map<String, String> accessToken = authService.refresh(refreshToken, response);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Token refreshed successfully",  accessToken));
+        return ResponseEntity.ok(new ApiResponse<>("Token refreshed successfully", accessToken));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@CookieValue("refreshToken") String refreshToken) {
+    public ResponseEntity<Void> logout(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+        if (refreshToken == null || refreshToken.isBlank()) {
+            throw new BadRequestException("Refresh token cookie is missing");
+        }
+
         authService.logout(refreshToken);
         return ResponseEntity.noContent().build();
     }
