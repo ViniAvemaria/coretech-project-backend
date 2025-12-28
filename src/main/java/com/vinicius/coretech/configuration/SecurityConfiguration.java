@@ -43,7 +43,9 @@ public class SecurityConfiguration {
             "/auth/login",
             "/auth/refresh-token",
             "/auth/logout",
-            "/h2-console/**"
+            "/h2-console/**",
+            "/swagger-ui/**",
+            "/v3/api-docs/**"
     };
 
     private final RSAKeyProperties keys;

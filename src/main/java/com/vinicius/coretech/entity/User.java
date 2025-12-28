@@ -50,6 +50,7 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
+    @Builder.Default
     @Setter
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
