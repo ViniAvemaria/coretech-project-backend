@@ -59,7 +59,7 @@ public class TokenService {
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(false)
-                .path("/api")
+                .path("/")
                 .maxAge(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
