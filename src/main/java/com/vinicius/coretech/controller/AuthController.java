@@ -51,12 +51,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@CookieValue(value = "refreshToken", required = false) String refreshToken) {
+    public ResponseEntity<Void> logout(@CookieValue(value = "refreshToken", required = false) String refreshToken, HttpServletResponse response) {
         if (refreshToken == null || refreshToken.isBlank()) {
             throw new BadRequestException("Refresh token cookie is missing");
         }
 
-        authService.logout(refreshToken);
+        authService.logout(refreshToken, response);
         return ResponseEntity.noContent().build();
     }
 }

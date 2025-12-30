@@ -123,12 +123,14 @@ public class AuthService {
         return accessTokenResponse;
     }
 
-    public void logout(String token) {
+    public void logout(String token, HttpServletResponse response) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Refresh token not found"));
 
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
+
+        tokenService.invalidateToken(response);
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(refreshToken.getUser()));
     }

@@ -42,7 +42,8 @@ public class CoreTechApplication {
             roles.add(userRole);
 
             User adminUser = User.builder()
-                    .email("admin@admin.com")
+                    .firstName("ADMIN")
+                    .email("admin@coretech.com")
                     .password(passwordEncoder.encode("password"))
                     .authorities(roles)
                     .build();

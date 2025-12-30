@@ -35,7 +35,6 @@ public class TokenService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(" "));
 
-        // Access Token
         JwtClaimsSet accessClaims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
@@ -45,7 +44,6 @@ public class TokenService {
                 .build();
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(accessClaims)).getTokenValue();
 
-        // Refresh Token
         Instant refreshTokenExpiration = now.plus(REFRESH_TOKEN_EXPIRATION_DAYS, ChronoUnit.DAYS);
         JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
                 .issuer("self")
@@ -55,7 +53,6 @@ public class TokenService {
                 .build();
         String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(refreshClaims)).getTokenValue();
 
-        // Add refresh token as HttpOnly cookie
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
                 .secure(false)
@@ -65,5 +62,17 @@ public class TokenService {
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
         return new TokenResponse(accessToken, refreshToken, refreshTokenExpiration);
+    }
+
+    public void invalidateToken(HttpServletResponse response) {
+        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Strict")
+                .build();
+
+        response.addHeader("Set-Cookie", cookie.toString());
     }
 }
