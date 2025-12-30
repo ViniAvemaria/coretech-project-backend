@@ -16,12 +16,12 @@ public class ProductService {
 
     private final ProductRepository productRepository;
 
-    public Product getProduct(Long id) {
+    public Product getById(Long id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product with id:" + id + " not found"));
     }
 
-    public List<Product> getProducts() {
+    public List<Product> getAll() {
         return productRepository.findAll();
     }
 
