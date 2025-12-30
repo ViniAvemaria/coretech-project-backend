@@ -2,6 +2,7 @@ package com.vinicius.coretech.service;
 
 import com.vinicius.coretech.DTO.Response.AuthUserResponse;
 import com.vinicius.coretech.DTO.Response.TokenResponse;
+import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.RefreshToken;
 import com.vinicius.coretech.entity.Role;
 import com.vinicius.coretech.entity.User;
@@ -9,6 +10,7 @@ import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.exception.RoleNotFoundException;
 import com.vinicius.coretech.exception.UnauthorizedException;
+import com.vinicius.coretech.repository.CartRepository;
 import com.vinicius.coretech.repository.RefreshTokenRepository;
 import com.vinicius.coretech.repository.RoleRepository;
 import com.vinicius.coretech.repository.UserRepository;
@@ -33,6 +35,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final CartRepository cartRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
@@ -46,12 +49,16 @@ public class AuthService {
         Role userRole = roleRepository.findByAuthority("USER")
                 .orElseThrow(() -> new RoleNotFoundException("Default role USER not found"));
 
-        userRepository.save(User.builder()
+        User user = userRepository.save(User.builder()
                 .firstName(firstName)
                 .lastName(lastName)
                 .email(email)
                 .password(passwordEncoder.encode(password))
                 .authorities(Set.of(userRole))
+                .build());
+
+        cartRepository.save(Cart.builder()
+                .user(user)
                 .build());
     }
 

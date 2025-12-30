@@ -34,7 +34,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<AuthUserResponse>> login(@RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
         AuthUserResponse newUser = authService.login(loginUserRequest.email(), loginUserRequest.password(), response);
-        return ResponseEntity.status(HttpStatus.OK).body(new ApiResponse<>("Login successful",  newUser));
+        return ResponseEntity.ok(new ApiResponse<>("Login successful",  newUser));
     }
 
     @PostMapping("/refresh-token")
