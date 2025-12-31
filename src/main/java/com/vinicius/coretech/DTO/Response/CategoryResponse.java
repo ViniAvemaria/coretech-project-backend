@@ -1,0 +1,15 @@
+package com.vinicius.coretech.DTO.Response;
+
+import com.vinicius.coretech.entity.Category;
+
+public record CategoryResponse(
+        Long id,
+        String name
+) {
+    public static CategoryResponse from(Category category) {
+        return new CategoryResponse(
+                category.getId(),
+                category.getName()
+        );
+    }
+}

@@ -12,5 +12,6 @@ public record ProductRequest(
         String image,
         Integer stockQuantity,
         List<String> specifications,
-        PhotoCredit photoCredit
+        PhotoCredit photoCredit,
+        String category
 ) {}
