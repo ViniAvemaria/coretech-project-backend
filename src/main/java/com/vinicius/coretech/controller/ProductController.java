@@ -14,7 +14,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -39,6 +41,15 @@ public class ProductController {
     public ResponseEntity<Void> create(@RequestBody ProductRequest request) {
         productService.createProduct(request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
+    }
+
+    @PostMapping("/import")
+    public ResponseEntity<ApiResponse<List<String>>> createFromImport(@RequestParam MultipartFile file) {
+        List<String> existingProducts = productService.createFromImport(file);
+        if (existingProducts.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.CREATED).build();
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>("Products imported successfully", existingProducts));
     }
 
     @PutMapping("/{id}")

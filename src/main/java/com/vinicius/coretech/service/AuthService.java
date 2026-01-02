@@ -64,12 +64,12 @@ public class AuthService {
 
     public AuthUserResponse login(String email, String password, HttpServletResponse response) {
         try {
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password)
             );
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
 
             List<RefreshToken> activeTokens = refreshTokenRepository.findAllByUserAndRevokedFalse(user);
             for (RefreshToken token : activeTokens) {
@@ -90,7 +90,7 @@ public class AuthService {
 
             return AuthUserResponse.from(user, tokens.accessToken());
         } catch (AuthenticationException e) {
-            throw new UnauthorizedException(e.getMessage());
+            throw new UnauthorizedException("Email or password incorrect");
         }
     }
 

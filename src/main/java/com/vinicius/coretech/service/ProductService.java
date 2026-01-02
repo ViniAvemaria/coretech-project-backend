@@ -5,12 +5,20 @@ import com.vinicius.coretech.DTO.Response.ProductResponse;
 import com.vinicius.coretech.entity.Category;
 import com.vinicius.coretech.entity.Product;
 import com.vinicius.coretech.exception.ConflictException;
+import com.vinicius.coretech.exception.ProductImportException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.repository.CategoryRepository;
 import com.vinicius.coretech.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,6 +63,45 @@ public class ProductService {
                 .photoCredit(product.photoCredit())
                 .category(category)
                 .build());
+    }
+
+    public List<String> createFromImport(MultipartFile file) {
+        try (Workbook workbook = WorkbookFactory.create(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            List<Product> products = new ArrayList<>();
+            List<String> existingProducts = new ArrayList<>();
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+
+                String name = row.getCell(0).getStringCellValue();
+                if (productRepository.findByName(name).isPresent()) {
+                    existingProducts.add(name);
+                    continue;
+                }
+
+                String categoryName = row.getCell(10).getStringCellValue().toLowerCase();
+                Category category = categoryRepository.findByName(categoryName)
+                        .orElseGet(() -> categoryRepository.save(Category.builder().name(categoryName).build()));
+
+                products.add(Product.builder()
+                        .name(name)
+                        .description(row.getCell(1).getStringCellValue())
+                        .price(row.getCell(2).getNumericCellValue())
+                        .rating(row.getCell(3).getNumericCellValue())
+                        .image(row.getCell(4).getStringCellValue())
+                        .stockQuantity((int) row.getCell(5).getNumericCellValue())
+                        .specifications(List.of(row.getCell(6).getStringCellValue().split("\\|")))
+                        .category(category)
+                        .build());
+            }
+
+            productRepository.saveAll(products);
+
+            return existingProducts;
+        } catch (IOException ex) {
+            throw new ProductImportException(ex.getMessage());
+        }
     }
 
     public void updateProduct(Long id, ProductRequest product) {
