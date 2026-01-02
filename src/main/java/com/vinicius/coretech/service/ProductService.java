@@ -3,6 +3,7 @@ package com.vinicius.coretech.service;
 import com.vinicius.coretech.DTO.Request.ProductRequest;
 import com.vinicius.coretech.DTO.Response.ProductResponse;
 import com.vinicius.coretech.entity.Category;
+import com.vinicius.coretech.entity.PhotoCredit;
 import com.vinicius.coretech.entity.Product;
 import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ProductImportException;
@@ -84,6 +85,12 @@ public class ProductService {
                 Category category = categoryRepository.findByName(categoryName)
                         .orElseGet(() -> categoryRepository.save(Category.builder().name(categoryName).build()));
 
+                PhotoCredit photoCredit = PhotoCredit.builder()
+                        .authorName(row.getCell(7).getStringCellValue())
+                        .url(row.getCell(8).getStringCellValue())
+                        .source(row.getCell(9).getStringCellValue())
+                        .build();
+
                 products.add(Product.builder()
                         .name(name)
                         .description(row.getCell(1).getStringCellValue())
@@ -92,6 +99,7 @@ public class ProductService {
                         .image(row.getCell(4).getStringCellValue())
                         .stockQuantity((int) row.getCell(5).getNumericCellValue())
                         .specifications(List.of(row.getCell(6).getStringCellValue().split("\\|")))
+                        .photoCredit(photoCredit)
                         .category(category)
                         .build());
             }
