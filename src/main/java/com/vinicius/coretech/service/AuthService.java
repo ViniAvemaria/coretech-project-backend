@@ -1,7 +1,5 @@
 package com.vinicius.coretech.service;
 
-import com.vinicius.coretech.DTO.Response.AuthUserResponse;
-import com.vinicius.coretech.DTO.Response.TokenResponse;
 import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.RefreshToken;
 import com.vinicius.coretech.entity.Role;
@@ -22,15 +20,15 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class AuthService {
 
     private final UserRepository userRepository;
@@ -62,7 +60,7 @@ public class AuthService {
                 .build());
     }
 
-    public AuthUserResponse login(String email, String password, HttpServletResponse response) {
+    public void login(String email, String password, HttpServletResponse response) {
         try {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password)
@@ -77,26 +75,15 @@ public class AuthService {
             }
             refreshTokenRepository.saveAll(activeTokens);
 
-            TokenResponse tokens = tokenService.generateTokens(auth, response);
-            refreshTokenRepository.save(
-                    RefreshToken.builder()
-                            .token(tokens.refreshToken())
-                            .expiresAt(tokens.refreshTokenExpiration())
-                            .user(user)
-                            .build()
-            );
+            tokenService.generateTokens(auth, response, user);
 
             deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
-
-            return AuthUserResponse.from(user, tokens.accessToken());
         } catch (AuthenticationException e) {
             throw new UnauthorizedException("Email or password incorrect");
         }
     }
 
-    public Map<String, String> refresh(String token, HttpServletResponse response) {
-        Map<String, String> accessTokenResponse = new HashMap<>();
-
+    public void refresh(String token, HttpServletResponse response) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Refresh token not found"));
 
@@ -115,19 +102,9 @@ public class AuthService {
                 null,
                 user.getAuthorities()
         );
-        TokenResponse tokens = tokenService.generateTokens(auth, response);
-        accessTokenResponse.put("accessToken", tokens.accessToken());
-
-        RefreshToken newRefreshToken = RefreshToken.builder()
-                .token(tokens.refreshToken())
-                .user(user)
-                .expiresAt(tokens.refreshTokenExpiration())
-                .build();
-        refreshTokenRepository.save(newRefreshToken);
+        tokenService.generateTokens(auth, response, user);
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
-
-        return accessTokenResponse;
     }
 
     public void logout(String token, HttpServletResponse response) {
@@ -137,7 +114,7 @@ public class AuthService {
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
-        tokenService.invalidateToken(response);
+        tokenService.clearTokens(response);
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(refreshToken.getUser()));
     }

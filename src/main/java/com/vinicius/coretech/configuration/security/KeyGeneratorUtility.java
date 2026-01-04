@@ -1,4 +1,4 @@
-package com.vinicius.coretech.util;
+package com.vinicius.coretech.configuration.security;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

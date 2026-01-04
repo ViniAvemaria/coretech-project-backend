@@ -1,6 +1,8 @@
 package com.vinicius.coretech.service;
 
-import com.vinicius.coretech.DTO.Response.TokenResponse;
+import com.vinicius.coretech.entity.RefreshToken;
+import com.vinicius.coretech.entity.User;
+import com.vinicius.coretech.repository.RefreshTokenRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -21,6 +23,7 @@ import java.util.stream.Collectors;
 public class TokenService {
 
     private final JwtEncoder jwtEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${jwt.access-token.expiration-minutes}")
     private long ACCESS_TOKEN_EXPIRATION_MINUTES;
@@ -28,7 +31,7 @@ public class TokenService {
     @Value("${jwt.refresh-token.expiration-days}")
     private long REFRESH_TOKEN_EXPIRATION_DAYS;
 
-    public TokenResponse generateTokens(Authentication auth, HttpServletResponse response) {
+    public void generateTokens(Authentication auth, HttpServletResponse response, User user) {
         Instant now = Instant.now();
 
         String scope = auth.getAuthorities().stream()
@@ -44,7 +47,17 @@ public class TokenService {
                 .build();
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(accessClaims)).getTokenValue();
 
+        ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(ACCESS_TOKEN_EXPIRATION_MINUTES * 60)
+                .sameSite("Lax")
+                .build();
+        response.addHeader("Set-Cookie", accessCookie.toString());
+
         Instant refreshTokenExpiration = now.plus(REFRESH_TOKEN_EXPIRATION_DAYS, ChronoUnit.DAYS);
+
         JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
@@ -58,21 +71,38 @@ public class TokenService {
                 .secure(false)
                 .path("/")
                 .maxAge(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+                .sameSite("Lax")
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
-        return new TokenResponse(accessToken, refreshToken, refreshTokenExpiration);
+        refreshTokenRepository.save(
+                RefreshToken.builder()
+                        .token(refreshToken)
+                        .expiresAt(refreshTokenExpiration)
+                        .user(user)
+                        .build()
+        );
     }
 
-    public void invalidateToken(HttpServletResponse response) {
-        ResponseCookie cookie = ResponseCookie.from("refreshToken", "")
+    public void clearTokens(HttpServletResponse response) {
+        ResponseCookie accessToken = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Strict")
+                .sameSite("Lax")
                 .build();
 
-        response.addHeader("Set-Cookie", cookie.toString());
+        response.addHeader("Set-Cookie", accessToken.toString());
+
+        ResponseCookie refreshToken = ResponseCookie.from("refreshToken", "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
+                    .sameSite("Lax")
+                .build();
+
+        response.addHeader("Set-Cookie", refreshToken.toString());
     }
 }

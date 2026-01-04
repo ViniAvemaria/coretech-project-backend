@@ -2,8 +2,6 @@ package com.vinicius.coretech.controller;
 
 import com.vinicius.coretech.DTO.Request.LoginUserRequest;
 import com.vinicius.coretech.DTO.Request.RegisterUserRequest;
-import com.vinicius.coretech.DTO.Response.ApiResponse;
-import com.vinicius.coretech.DTO.Response.AuthUserResponse;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -15,8 +13,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -32,13 +28,13 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<AuthUserResponse>> login(@RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
-        AuthUserResponse newUser = authService.login(loginUserRequest.email(), loginUserRequest.password(), response);
-        return ResponseEntity.ok(new ApiResponse<>("Login successful",  newUser));
+    public ResponseEntity<Void> login(@RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
+        authService.login(loginUserRequest.email(), loginUserRequest.password(), response);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/refresh-token")
-    public ResponseEntity<ApiResponse<Map<String, String>>> refresh(
+    public ResponseEntity<Void> refresh(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletResponse response
     ) {
@@ -46,8 +42,8 @@ public class AuthController {
             throw new BadRequestException("Refresh token cookie is missing");
         }
 
-        Map<String, String> accessToken = authService.refresh(refreshToken, response);
-        return ResponseEntity.ok(new ApiResponse<>("Token refreshed successfully", accessToken));
+        authService.refresh(refreshToken, response);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/logout")
