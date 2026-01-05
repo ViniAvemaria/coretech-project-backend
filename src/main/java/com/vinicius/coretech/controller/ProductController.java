@@ -32,7 +32,7 @@ public class ProductController {
         return ResponseEntity.ok(new ApiResponse<>("Product found successfully", productService.getById(id)));
     }
 
-    @GetMapping()
+    @GetMapping
     public ResponseEntity<ApiResponse<List<ProductResponse>>> getAll() {
         return ResponseEntity.ok(new ApiResponse<>("Products found successfully", productService.getAll()));
     }
