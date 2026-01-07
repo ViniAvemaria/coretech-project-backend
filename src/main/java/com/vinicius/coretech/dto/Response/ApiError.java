@@ -1,4 +1,4 @@
-package com.vinicius.coretech.DTO.Response;
+package com.vinicius.coretech.dto.Response;
 
 import java.time.Instant;
 

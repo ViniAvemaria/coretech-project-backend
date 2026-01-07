@@ -1,8 +1,8 @@
 package com.vinicius.coretech.controller;
 
-import com.vinicius.coretech.DTO.Request.CartItemRequest;
-import com.vinicius.coretech.DTO.Response.ApiResponse;
-import com.vinicius.coretech.DTO.Response.CartResponse;
+import com.vinicius.coretech.dto.Request.CartItemRequest;
+import com.vinicius.coretech.dto.Response.ApiResponse;
+import com.vinicius.coretech.dto.Response.CartResponse;
 import com.vinicius.coretech.service.CartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/cart")
+@RequestMapping("/carts")
 public class CartController {
 
     private final CartService cartService;

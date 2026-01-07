@@ -1,4 +1,4 @@
-package com.vinicius.coretech.DTO.Response;
+package com.vinicius.coretech.dto.Response;
 
 public record ApiResponse<T>(
         String message,

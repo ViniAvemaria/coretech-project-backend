@@ -1,7 +1,7 @@
 package com.vinicius.coretech.controller;
 
-import com.vinicius.coretech.DTO.Request.LoginUserRequest;
-import com.vinicius.coretech.DTO.Request.RegisterUserRequest;
+import com.vinicius.coretech.dto.Request.LoginUserRequest;
+import com.vinicius.coretech.dto.Request.RegisterUserRequest;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;

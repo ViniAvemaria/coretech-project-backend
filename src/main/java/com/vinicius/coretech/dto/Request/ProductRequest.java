@@ -1,4 +1,4 @@
-package com.vinicius.coretech.DTO.Request;
+package com.vinicius.coretech.dto.Request;
 
 import com.vinicius.coretech.entity.PhotoCredit;
 

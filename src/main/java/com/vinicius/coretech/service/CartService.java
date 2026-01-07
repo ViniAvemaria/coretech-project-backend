@@ -1,7 +1,7 @@
 package com.vinicius.coretech.service;
 
-import com.vinicius.coretech.DTO.Request.CartItemRequest;
-import com.vinicius.coretech.DTO.Response.CartResponse;
+import com.vinicius.coretech.dto.Request.CartItemRequest;
+import com.vinicius.coretech.dto.Response.CartResponse;
 import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.CartItem;
 import com.vinicius.coretech.entity.Product;
@@ -48,7 +48,7 @@ public class CartService {
         Product product = productRepository.findById(request.id())
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
 
-        CartItem cartItem = cartItemRepository.findByCartAndProduct(cart, product)
+        cartItemRepository.findByCartAndProduct(cart, product)
                 .map(item -> {
                     item.setQuantity(item.getQuantity() + request.quantity());
                     return item;

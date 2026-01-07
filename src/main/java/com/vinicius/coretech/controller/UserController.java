@@ -1,7 +1,7 @@
 package com.vinicius.coretech.controller;
 
-import com.vinicius.coretech.DTO.Response.ApiResponse;
-import com.vinicius.coretech.DTO.Response.AuthUserResponse;
+import com.vinicius.coretech.dto.Response.ApiResponse;
+import com.vinicius.coretech.dto.Response.AuthUserResponse;
 import com.vinicius.coretech.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/user")
+@RequestMapping("/users")
 public class UserController {
 
     private final UserService userService;

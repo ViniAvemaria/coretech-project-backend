@@ -1,8 +1,8 @@
 package com.vinicius.coretech.controller;
 
-import com.vinicius.coretech.DTO.Request.ProductRequest;
-import com.vinicius.coretech.DTO.Response.ApiResponse;
-import com.vinicius.coretech.DTO.Response.ProductResponse;
+import com.vinicius.coretech.dto.Request.ProductRequest;
+import com.vinicius.coretech.dto.Response.ApiResponse;
+import com.vinicius.coretech.dto.Response.ProductResponse;
 import com.vinicius.coretech.service.ProductService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -33,8 +33,8 @@ public class ProductController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAll() {
-        return ResponseEntity.ok(new ApiResponse<>("Products found successfully", productService.getAll()));
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAll(@RequestParam(required = false) String category, @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(new ApiResponse<>("Products found successfully", productService.getAll(category, search)));
     }
 
     @PostMapping

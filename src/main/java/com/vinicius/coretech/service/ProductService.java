@@ -1,7 +1,7 @@
 package com.vinicius.coretech.service;
 
-import com.vinicius.coretech.DTO.Request.ProductRequest;
-import com.vinicius.coretech.DTO.Response.ProductResponse;
+import com.vinicius.coretech.dto.Request.ProductRequest;
+import com.vinicius.coretech.dto.Response.ProductResponse;
 import com.vinicius.coretech.entity.Category;
 import com.vinicius.coretech.entity.PhotoCredit;
 import com.vinicius.coretech.entity.Product;
@@ -10,11 +10,13 @@ import com.vinicius.coretech.exception.ProductImportException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.repository.CategoryRepository;
 import com.vinicius.coretech.repository.ProductRepository;
+import com.vinicius.coretech.specs.ProductSpecs;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,9 +41,12 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAll() {
-        List<Product> allProducts = productRepository.findAll();
-        return allProducts.stream()
+    public List<ProductResponse> getAll(String category, String search) {
+        Specification<Product> spec = Specification.where(ProductSpecs.hasCategory(category))
+                .and(ProductSpecs.hasSearch(search));
+
+        return productRepository.findAll(spec)
+                .stream()
                 .map(ProductResponse::from)
                 .collect(Collectors.toList());
     }

@@ -1,6 +1,6 @@
 package com.vinicius.coretech.service;
 
-import com.vinicius.coretech.DTO.Response.AuthUserResponse;
+import com.vinicius.coretech.dto.Response.AuthUserResponse;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.exception.UnauthorizedException;
 import com.vinicius.coretech.repository.UserRepository;

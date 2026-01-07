@@ -1,6 +1,6 @@
 package com.vinicius.coretech.advice;
 
-import com.vinicius.coretech.DTO.Response.ApiError;
+import com.vinicius.coretech.dto.Response.ApiError;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;

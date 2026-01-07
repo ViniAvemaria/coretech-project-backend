@@ -1,7 +1,7 @@
 package com.vinicius.coretech.controller;
 
-import com.vinicius.coretech.DTO.Response.ApiResponse;
-import com.vinicius.coretech.DTO.Response.CategoryResponse;
+import com.vinicius.coretech.dto.Response.ApiResponse;
+import com.vinicius.coretech.dto.Response.CategoryResponse;
 import com.vinicius.coretech.service.CategoryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

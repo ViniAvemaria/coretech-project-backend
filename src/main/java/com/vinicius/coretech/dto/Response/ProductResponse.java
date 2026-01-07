@@ -1,4 +1,4 @@
-package com.vinicius.coretech.DTO.Response;
+package com.vinicius.coretech.dto.Response;
 
 import com.vinicius.coretech.entity.PhotoCredit;
 import com.vinicius.coretech.entity.Product;

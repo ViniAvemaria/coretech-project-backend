@@ -1,4 +1,4 @@
-package com.vinicius.coretech.DTO.Request;
+package com.vinicius.coretech.dto.Request;
 
 public record CartItemRequest(
         Long id,
