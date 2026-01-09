@@ -12,6 +12,7 @@ import com.vinicius.coretech.repository.CategoryRepository;
 import com.vinicius.coretech.repository.ProductRepository;
 import com.vinicius.coretech.specs.ProductSpecs;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -52,7 +53,7 @@ public class ProductService {
     }
 
     @Transactional
-    public void createProduct(ProductRequest product) {
+    public void create(ProductRequest product) {
         if (productRepository.findByName(product.name()).isPresent()) {
             throw new ConflictException("Product " + product.name() + " already exists");
         }
@@ -66,7 +67,6 @@ public class ProductService {
                 .name(product.name())
                 .description(product.description())
                 .price(product.price())
-                .rating(product.rating())
                 .image(product.image())
                 .stockQuantity(product.stockQuantity())
                 .specifications(product.specifications())
@@ -84,31 +84,38 @@ public class ProductService {
 
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
+                if (row == null) continue;
 
-                String name = row.getCell(0).getStringCellValue();
+                Cell nameCell = row.getCell(0, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                if (nameCell == null) continue;
+                String name = nameCell.getStringCellValue().trim();
+                if (name.isEmpty()) continue;
+
                 if (productRepository.findByName(name).isPresent()) {
                     existingProducts.add(name);
                     continue;
                 }
 
-                String categoryName = row.getCell(10).getStringCellValue().toLowerCase();
+                Cell categoryCell = row.getCell(9, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+                if (categoryCell == null) continue;
+                String categoryName = categoryCell.getStringCellValue().toLowerCase();
+
                 Category category = categoryRepository.findByName(categoryName)
                         .orElseGet(() -> categoryRepository.save(Category.builder().name(categoryName).build()));
 
                 PhotoCredit photoCredit = PhotoCredit.builder()
-                        .authorName(row.getCell(7).getStringCellValue())
-                        .url(row.getCell(8).getStringCellValue())
-                        .source(row.getCell(9).getStringCellValue())
+                        .authorName(getString(row, 6))
+                        .url(getString(row, 7))
+                        .source(getString(row, 8))
                         .build();
 
                 products.add(Product.builder()
                         .name(name)
-                        .description(row.getCell(1).getStringCellValue())
-                        .price(row.getCell(2).getNumericCellValue())
-                        .rating(row.getCell(3).getNumericCellValue())
-                        .image(row.getCell(4).getStringCellValue())
-                        .stockQuantity((int) row.getCell(5).getNumericCellValue())
-                        .specifications(List.of(row.getCell(6).getStringCellValue().split("\\|")))
+                        .description(getString(row, 1))
+                        .price(getNumeric(row, 2))
+                        .image(getString(row, 3))
+                        .stockQuantity((int) getNumeric(row, 4))
+                        .specifications(List.of(getString(row, 5).split("\\|")))
                         .photoCredit(photoCredit)
                         .category(category)
                         .build());
@@ -133,7 +140,6 @@ public class ProductService {
         existing.setName(product.name());
         existing.setDescription(product.description());
         existing.setPrice(product.price());
-        existing.setRating(product.rating());
         existing.setImage(product.image());
         existing.setStockQuantity(product.stockQuantity());
         existing.setSpecifications(product.specifications());
@@ -147,5 +153,15 @@ public class ProductService {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Product not found with id: " + id));
         productRepository.delete(product);
+    }
+
+    private String getString(Row row, int index) {
+        Cell cell = row.getCell(index, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+        return cell == null ? "" : cell.getStringCellValue().trim();
+    }
+
+    private double getNumeric(Row row, int index) {
+        Cell cell = row.getCell(index, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+        return cell == null ? 0.0 : cell.getNumericCellValue();
     }
 }

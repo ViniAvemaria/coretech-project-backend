@@ -2,6 +2,7 @@ package com.vinicius.coretech.dto.Response;
 
 import com.vinicius.coretech.entity.PhotoCredit;
 import com.vinicius.coretech.entity.Product;
+import com.vinicius.coretech.entity.Review;
 
 import java.util.List;
 
@@ -18,12 +19,17 @@ public record ProductResponse(
         String category
 ) {
     public static ProductResponse from(Product product) {
+        double avgRating = product.getReviews().stream()
+                .mapToDouble(Review::getRating)
+                .average()
+                .orElse(0.0);
+
         return new ProductResponse(
                 product.getId(),
                 product.getName(),
                 product.getDescription(),
                 product.getPrice(),
-                product.getRating(),
+                avgRating,
                 product.getImage(),
                 product.getStockQuantity(),
                 product.getSpecifications(),

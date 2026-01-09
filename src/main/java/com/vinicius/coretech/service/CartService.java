@@ -11,10 +11,7 @@ import com.vinicius.coretech.exception.UnauthorizedException;
 import com.vinicius.coretech.repository.CartItemRepository;
 import com.vinicius.coretech.repository.CartRepository;
 import com.vinicius.coretech.repository.ProductRepository;
-import com.vinicius.coretech.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,10 +23,10 @@ public class CartService {
     private final CartRepository cartRepository;
     private final CartItemRepository cartItemRepository;
     private final ProductRepository productRepository;
-    private final UserRepository userRepository;
+    private final SecurityService securityService;
 
     public CartResponse getCart(){
-        User user = getUserFromSecurityContext();
+        User user = securityService.getUserFromSecurityContext();
 
         Cart cart = cartRepository.findByUser(user).orElseGet(() -> cartRepository.save(Cart.builder().user(user).build()));
 
@@ -37,7 +34,7 @@ public class CartService {
     }
 
     public void addItem(CartItemRequest request) {
-        User user =  getUserFromSecurityContext();
+        User user =  securityService.getUserFromSecurityContext();
 
         Cart cart = cartRepository.findByUser(user)
                 .orElseGet(() -> cartRepository.save(Cart.builder().user(user).build()));
@@ -65,7 +62,7 @@ public class CartService {
     }
 
     public void incrementItem(Long id) {
-        User user = getUserFromSecurityContext();
+        User user = securityService.getUserFromSecurityContext();
 
         CartItem cartItem  = cartItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
@@ -77,7 +74,7 @@ public class CartService {
     }
 
     public void decrementItem(Long id) {
-        User user = getUserFromSecurityContext();
+        User user = securityService.getUserFromSecurityContext();
 
         CartItem cartItem  = cartItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
@@ -93,7 +90,7 @@ public class CartService {
     }
 
     public void deleteItem(Long id) {
-        User user = getUserFromSecurityContext();
+        User user = securityService.getUserFromSecurityContext();
 
         CartItem cartItem  = cartItemRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Item not found"));
@@ -102,14 +99,5 @@ public class CartService {
             throw new UnauthorizedException("This cart is not associated with the authenticated user");
 
         cartItem.getCart().getItems().remove(cartItem);
-    }
-
-    private User getUserFromSecurityContext() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication != null ? authentication.getName() : null;
-        if (email == null) throw new UnauthorizedException("No authenticated user found");
-
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new UnauthorizedException("User not found with email: " + email));
     }
 }

@@ -44,7 +44,10 @@ public class Product {
     private String description;
 
     private Double price;
-    private Double rating;
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Review> reviews = new ArrayList<>();
+
     private String image;
     private Integer stockQuantity;
 
