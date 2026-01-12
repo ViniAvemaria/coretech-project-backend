@@ -23,6 +23,7 @@ public record ProductResponse(
                 .mapToDouble(Review::getRating)
                 .average()
                 .orElse(0.0);
+        avgRating = Math.round(avgRating * 10.0) / 10.0;
 
         return new ProductResponse(
                 product.getId(),

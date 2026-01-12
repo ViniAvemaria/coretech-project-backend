@@ -10,11 +10,11 @@ import com.vinicius.coretech.exception.UnauthorizedException;
 import com.vinicius.coretech.repository.ProductRepository;
 import com.vinicius.coretech.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,11 +25,18 @@ public class ReviewService {
     private final SecurityService securityService;
 
     @Transactional(readOnly = true)
-    public List<ReviewResponse> getAllByProduct(Long productId) {
-        return reviewRepository.findAllByProductId(productId)
+    public List<ReviewResponse> getAllByProduct(Long productId, String sort) {
+        Sort s = switch (sort) {
+            case "oldest" -> Sort.by("createdAt").ascending();
+            case "highest" -> Sort.by("rating").descending();
+            case "lowest" -> Sort.by("rating").ascending();
+            default -> Sort.by("createdAt").descending();
+        };
+
+        return reviewRepository.findAllByProductId(productId, s)
                 .stream()
                 .map(ReviewResponse::from)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Transactional

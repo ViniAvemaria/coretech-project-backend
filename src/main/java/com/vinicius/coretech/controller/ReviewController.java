@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -26,8 +27,11 @@ public class ReviewController {
     private final ReviewService reviewService;
 
     @GetMapping("/{productId}")
-    public ResponseEntity<ApiResponse<List<ReviewResponse>>> getAllByProduct(@PathVariable Long productId) {
-        return ResponseEntity.ok(new ApiResponse<>("Product reviews found successfully", reviewService.getAllByProduct(productId)));
+    public ResponseEntity<ApiResponse<List<ReviewResponse>>> getAllByProduct(
+            @PathVariable Long productId,
+            @RequestParam(defaultValue = "newest") String sort
+    ) {
+        return ResponseEntity.ok(new ApiResponse<>("Product reviews found successfully",reviewService.getAllByProduct(productId, sort)));
     }
 
     @PostMapping("/{productId}")
