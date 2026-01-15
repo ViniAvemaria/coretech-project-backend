@@ -26,10 +26,10 @@ public class TokenService {
     private final RefreshTokenRepository refreshTokenRepository;
 
     @Value("${jwt.access-token.expiration-minutes}")
-    private long ACCESS_TOKEN_EXPIRATION_MINUTES;
+    private long accessTokenExpirationMinutes;
 
     @Value("${jwt.refresh-token.expiration-days}")
-    private long REFRESH_TOKEN_EXPIRATION_DAYS;
+    private long refreshTokenExpirationDays;
 
     public void generateTokens(Authentication auth, HttpServletResponse response, User user) {
         Instant now = Instant.now();
@@ -41,7 +41,7 @@ public class TokenService {
         JwtClaimsSet accessClaims = JwtClaimsSet.builder()
                 .issuer("self")
                 .issuedAt(now)
-                .expiresAt(now.plus(ACCESS_TOKEN_EXPIRATION_MINUTES, ChronoUnit.MINUTES))
+                .expiresAt(now.plus(accessTokenExpirationMinutes, ChronoUnit.MINUTES))
                 .subject(auth.getName())
                 .claim("roles", scope)
                 .build();
@@ -51,12 +51,12 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
-                .maxAge(ACCESS_TOKEN_EXPIRATION_MINUTES * 60)
+                .maxAge(accessTokenExpirationMinutes * 60)
                 .sameSite("Lax")
                 .build();
         response.addHeader("Set-Cookie", accessCookie.toString());
 
-        Instant refreshTokenExpiration = now.plus(REFRESH_TOKEN_EXPIRATION_DAYS, ChronoUnit.DAYS);
+        Instant refreshTokenExpiration = now.plus(refreshTokenExpirationDays, ChronoUnit.DAYS);
 
         JwtClaimsSet refreshClaims = JwtClaimsSet.builder()
                 .issuer("self")
@@ -70,7 +70,7 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(false)
                 .path("/")
-                .maxAge(REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60)
+                .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
                 .sameSite("Lax")
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());

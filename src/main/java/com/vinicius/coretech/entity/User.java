@@ -32,6 +32,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 @Getter
+@Setter
 public class User implements UserDetails {
 
     @Id
@@ -46,12 +47,10 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Setter
     @Column(nullable = false)
     private String password;
 
     @Builder.Default
-    @Setter
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_role_junction",
@@ -76,23 +75,11 @@ public class User implements UserDetails {
         return this.email;
     }
 
-    @Override
-    public boolean isAccountNonExpired() {
-        return true;
-    }
-
-    @Override
-    public boolean isAccountNonLocked() {
-        return true;
-    }
-
-    @Override
-    public boolean isCredentialsNonExpired() {
-        return true;
-    }
+    @Builder.Default
+    private boolean enabled = false;
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 }

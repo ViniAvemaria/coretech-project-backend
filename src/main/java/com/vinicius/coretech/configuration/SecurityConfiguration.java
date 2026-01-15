@@ -9,6 +9,7 @@ import com.nimbusds.jose.proc.SecurityContext;
 import com.vinicius.coretech.configuration.security.CookieBearerTokenResolver;
 import com.vinicius.coretech.configuration.security.RSAKeyProperties;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -40,6 +41,7 @@ public class SecurityConfiguration {
 
     private static final String[] PUBLIC_ENDPOINTS = {
             "/auth/register",
+            "/auth/confirm-email",
             "/auth/login",
             "/auth/refresh-token",
             "/auth/logout",
@@ -49,6 +51,9 @@ public class SecurityConfiguration {
     };
 
     private final RSAKeyProperties keys;
+
+    @Value("${app.frontend-base-url}")
+    private String frontendUrl;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
@@ -115,7 +120,7 @@ public class SecurityConfiguration {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173"));
+        config.setAllowedOrigins(List.of(frontendUrl));
         config.setAllowedMethods(List.of("GET","POST","PUT","DELETE","OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);

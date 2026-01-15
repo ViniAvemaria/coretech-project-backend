@@ -46,6 +46,7 @@ public class CoreTechApplication {
                     .email("admin@coretech.com")
                     .password(passwordEncoder.encode("password"))
                     .authorities(roles)
+                    .enabled(true)
                     .build();
 
             userRepository.save(adminUser);
