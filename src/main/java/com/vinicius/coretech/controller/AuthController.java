@@ -3,7 +3,8 @@ package com.vinicius.coretech.controller;
 import com.vinicius.coretech.dto.Request.LoginUserRequest;
 import com.vinicius.coretech.dto.Request.RegisterUserRequest;
 import com.vinicius.coretech.exception.BadRequestException;
-import com.vinicius.coretech.exception.UnauthorizedException;
+import com.vinicius.coretech.exception.ConflictException;
+import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.service.AuthService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -36,16 +37,40 @@ public class AuthController {
 
     @GetMapping("/confirm-email")
     public ResponseEntity<Void> confirmEmail(@RequestParam String token) {
+        String status;
+
         try {
             authService.confirmEmail(token);
-            return ResponseEntity.status(302)
-                    .header("Location", frontendUrl + "/account-activated?status=success")
-                    .build();
-        } catch (BadRequestException | UnauthorizedException e) {
-            return ResponseEntity.status(302)
-                    .header("Location", frontendUrl + "/account-activated?status=invalid")
-                    .build();
+            status="confirmation-success";
+        } catch (BadRequestException e) {
+            status="confirmation-failure";
+        } catch (ResourceNotFoundException e) {
+            status="not-found";
         }
+
+        return ResponseEntity.status(302)
+                .header("Location",
+                        frontendUrl + "/account-status?status=" + status)
+                .build();
+    }
+
+    @GetMapping("/resend-confirmation")
+    public ResponseEntity<Void> resendConfirmation(@RequestParam String token) {
+        String status;
+
+        try {
+            authService.resendConfirmation(token);
+            status="resend-success";
+        } catch (ConflictException e) {
+            status="resend-failure";
+        } catch (ResourceNotFoundException e) {
+            status="not-found";
+        }
+
+        return ResponseEntity.status(302)
+                .header("Location",
+                        frontendUrl + "/account-status?status=" + status)
+                .build();
     }
 
     @PostMapping("/login")

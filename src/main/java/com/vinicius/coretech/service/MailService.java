@@ -26,8 +26,11 @@ public class MailService {
         message.setFrom(from);
         message.setSubject("Account confirmation");
         message.setText("Welcome! Please activate your account by clicking the link below:\n\n" +
-                backendUrl +"/api/auth/confirm-email?token=" + token +
-                "\n\nThis link will expire in 24 hours.");
+                backendUrl + "/api/auth/confirm-email?token=" + token +
+                "\n\nThis link will expire in 24 hours." +
+                "\n\nIf your link expires, request a new one here:\n" +
+                backendUrl + "/api/auth/resend-confirmation?token=" + token);
+
         mailSender.send(message);
     }
 }

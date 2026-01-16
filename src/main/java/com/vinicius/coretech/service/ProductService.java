@@ -5,8 +5,8 @@ import com.vinicius.coretech.dto.Response.ProductResponse;
 import com.vinicius.coretech.entity.Category;
 import com.vinicius.coretech.entity.PhotoCredit;
 import com.vinicius.coretech.entity.Product;
+import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;
-import com.vinicius.coretech.exception.ProductImportException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.repository.CategoryRepository;
 import com.vinicius.coretech.repository.ProductRepository;
@@ -125,7 +125,7 @@ public class ProductService {
 
             return existingProducts;
         } catch (IOException ex) {
-            throw new ProductImportException(ex.getMessage());
+            throw new BadRequestException(ex.getMessage());
         }
     }
 

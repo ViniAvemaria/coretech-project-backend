@@ -50,7 +50,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
 
-    @Value("${confirm-token.expiration-hours}")
+    @Value("${token.confirm.expiration-hours}")
     private long confirmTokenExpirationHours;
 
     @Value("${email.service.enabled}")
@@ -93,10 +93,10 @@ public class AuthService {
 
     public void confirmEmail(String token){
         VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
-                .orElseThrow(() -> new UnauthorizedException("Confirmation Token not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Confirmation Token not found"));
 
         if(verificationToken.getExpiresAt().isBefore(Instant.now()) || verificationToken.isUsed()) {
-            throw new UnauthorizedException("Confirmation token expired or used");
+            throw new BadRequestException("Confirmation token expired or used");
         }
 
         if(verificationToken.getTokenType() != CONFIRM_EMAIL) {
@@ -111,14 +111,41 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    public void resendConfirmation(String token) {
+        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new ResourceNotFoundException("Confirmation Token not found"));
+
+        if(!verificationToken.getExpiresAt().isBefore(Instant.now()) && !verificationToken.isUsed()) {
+            throw new ConflictException("There's still a valid Confirmation Token");
+        }
+
+        User user = verificationToken.getUser();
+
+        if(user.isEnabled()) {
+            throw new ConflictException("This account has already been activated");
+        }
+
+        String confirmationToken = UUID.randomUUID().toString();
+
+        verificationTokenRepository.save(VerificationToken.builder()
+                .token(confirmationToken)
+                .tokenType(CONFIRM_EMAIL)
+                .user(user)
+                .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
+                .build());
+
+        mailService.sendConfirmationToken(user.getEmail(), confirmationToken);
+    }
+
+    @Transactional(noRollbackFor = DisabledException.class)
     public void login(String email, String password, HttpServletResponse response) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
+
         try {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password)
             );
-
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
 
             List<RefreshToken> activeTokens = refreshTokenRepository.findAllByUserAndRevokedFalse(user);
             for (RefreshToken token : activeTokens) {
@@ -130,7 +157,33 @@ public class AuthService {
 
             deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
         } catch (DisabledException e) {
-            throw new UnauthorizedException("This account hasn't been activated");
+            VerificationToken verificationToken = verificationTokenRepository.findByUser(user)
+                    .orElseGet(() -> {
+                        String confirmationToken = UUID.randomUUID().toString();
+
+                        VerificationToken newToken = VerificationToken.builder()
+                                .token(confirmationToken)
+                                .tokenType(CONFIRM_EMAIL)
+                                .user(user)
+                                .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
+                                .build();
+
+                        verificationTokenRepository.save(newToken);
+                        mailService.sendConfirmationToken(user.getEmail(), confirmationToken);
+                        return newToken;
+                    });
+
+            if (verificationToken.getExpiresAt().isBefore(Instant.now())) {
+                String confirmationToken = UUID.randomUUID().toString();
+
+                verificationToken.setToken(confirmationToken);
+                verificationToken.setExpiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS));
+
+                verificationTokenRepository.save(verificationToken);
+                mailService.sendConfirmationToken(user.getEmail(), confirmationToken);
+            }
+
+            throw new DisabledException("This account is disabled. Check your email.");
         } catch (AuthenticationException e) {
             throw new UnauthorizedException("Email or password incorrect");
         }
