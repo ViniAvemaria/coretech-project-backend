@@ -78,21 +78,21 @@ public class AuthService {
                 .build());
 
         if(emailServiceEnabled) {
-            String token = UUID.randomUUID().toString();
+            String confirmationToken = UUID.randomUUID().toString();
 
-            verificationTokenRepository.save(VerificationToken.builder()
-                    .token(token)
+            VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
+                    .token(passwordEncoder.encode(confirmationToken))
                     .tokenType(CONFIRM_EMAIL)
                     .user(user)
                     .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
                     .build());
 
-            mailService.sendConfirmationToken(user.getEmail(), token);
+            mailService.sendConfirmationToken(user.getEmail(), confirmationToken, newToken.getId());
         }
     }
 
-    public void confirmEmail(String token){
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+    public void confirmEmail(String token, Long id){
+        VerificationToken verificationToken = verificationTokenRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Confirmation Token not found"));
 
         if(verificationToken.getExpiresAt().isBefore(Instant.now()) || verificationToken.isUsed()) {
@@ -100,6 +100,10 @@ public class AuthService {
         }
 
         if(verificationToken.getTokenType() != CONFIRM_EMAIL) {
+            throw new BadRequestException("Invalid Confirmation Token");
+        }
+
+        if(!passwordEncoder.matches(token, verificationToken.getToken())) {
             throw new BadRequestException("Invalid Confirmation Token");
         }
 
@@ -111,12 +115,16 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    public void resendConfirmation(String token) {
-        VerificationToken verificationToken = verificationTokenRepository.findByToken(token)
+    public void resendConfirmation(String token, Long id) {
+        VerificationToken verificationToken = verificationTokenRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Confirmation Token not found"));
 
         if(!verificationToken.getExpiresAt().isBefore(Instant.now()) && !verificationToken.isUsed()) {
             throw new ConflictException("There's still a valid Confirmation Token");
+        }
+
+        if(!passwordEncoder.matches(token, verificationToken.getToken())) {
+            throw new BadRequestException("Invalid Confirmation Token");
         }
 
         User user = verificationToken.getUser();
@@ -127,20 +135,20 @@ public class AuthService {
 
         String confirmationToken = UUID.randomUUID().toString();
 
-        verificationTokenRepository.save(VerificationToken.builder()
-                .token(confirmationToken)
+        VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
+                .token(passwordEncoder.encode(confirmationToken))
                 .tokenType(CONFIRM_EMAIL)
                 .user(user)
                 .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
                 .build());
 
-        mailService.sendConfirmationToken(user.getEmail(), confirmationToken);
+        mailService.sendConfirmationToken(user.getEmail(), confirmationToken, newToken.getId());
     }
 
     @Transactional(noRollbackFor = DisabledException.class)
     public void login(String email, String password, HttpServletResponse response) {
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResourceNotFoundException("Email not found"));
+                .orElseThrow(() -> new UnauthorizedException("Email or password incorrect"));
 
         try {
             Authentication auth = authenticationManager.authenticate(
@@ -162,25 +170,25 @@ public class AuthService {
                         String confirmationToken = UUID.randomUUID().toString();
 
                         VerificationToken newToken = VerificationToken.builder()
-                                .token(confirmationToken)
+                                .token(passwordEncoder.encode(confirmationToken))
                                 .tokenType(CONFIRM_EMAIL)
                                 .user(user)
                                 .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
                                 .build();
 
                         verificationTokenRepository.save(newToken);
-                        mailService.sendConfirmationToken(user.getEmail(), confirmationToken);
+                        mailService.sendConfirmationToken(user.getEmail(), confirmationToken, newToken.getId());
                         return newToken;
                     });
 
             if (verificationToken.getExpiresAt().isBefore(Instant.now())) {
                 String confirmationToken = UUID.randomUUID().toString();
 
-                verificationToken.setToken(confirmationToken);
+                verificationToken.setToken(passwordEncoder.encode(confirmationToken));
                 verificationToken.setExpiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS));
 
                 verificationTokenRepository.save(verificationToken);
-                mailService.sendConfirmationToken(user.getEmail(), confirmationToken);
+                mailService.sendConfirmationToken(user.getEmail(), confirmationToken, verificationToken.getId());
             }
 
             throw new DisabledException("This account is disabled. Check your email.");

@@ -36,11 +36,11 @@ public class AuthController {
     }
 
     @GetMapping("/confirm-email")
-    public ResponseEntity<Void> confirmEmail(@RequestParam String token) {
+    public ResponseEntity<Void> confirmEmail(@RequestParam String token, @RequestParam Long id) {
         String status;
 
         try {
-            authService.confirmEmail(token);
+            authService.confirmEmail(token, id);
             status="confirmation-success";
         } catch (BadRequestException e) {
             status="confirmation-failure";
@@ -55,11 +55,11 @@ public class AuthController {
     }
 
     @GetMapping("/resend-confirmation")
-    public ResponseEntity<Void> resendConfirmation(@RequestParam String token) {
+    public ResponseEntity<Void> resendConfirmation(@RequestParam String token, @RequestParam Long id) {
         String status;
 
         try {
-            authService.resendConfirmation(token);
+            authService.resendConfirmation(token, id);
             status="resend-success";
         } catch (ConflictException e) {
             status="resend-failure";

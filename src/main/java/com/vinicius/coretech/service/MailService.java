@@ -20,16 +20,16 @@ public class MailService {
     private String from;
 
     @Async
-    public void sendConfirmationToken(String to, String token) {
+    public void sendConfirmationToken(String to, String token, Long id) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(to);
         message.setFrom(from);
         message.setSubject("Account confirmation");
         message.setText("Welcome! Please activate your account by clicking the link below:\n\n" +
-                backendUrl + "/api/auth/confirm-email?token=" + token +
+                backendUrl + "/api/auth/confirm-email?token=" + token + "&id=" + id +
                 "\n\nThis link will expire in 24 hours." +
                 "\n\nIf your link expires, request a new one here:\n" +
-                backendUrl + "/api/auth/resend-confirmation?token=" + token);
+                backendUrl + "/api/auth/resend-confirmation?token=" + token + "&id=" + id);
 
         mailSender.send(message);
     }
