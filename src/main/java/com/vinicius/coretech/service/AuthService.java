@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static com.vinicius.coretech.entity.TokenType.CONFIRM_EMAIL;
+import static com.vinicius.coretech.entity.TokenType.RESET_PASSWORD;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +53,9 @@ public class AuthService {
 
     @Value("${token.confirm.expiration-hours}")
     private long confirmTokenExpirationHours;
+
+    @Value("${token.recovery.expiration-minutes}")
+    private long recoveryTokenExpirationMinutes;
 
     @Value("${email.service.enabled}")
     private boolean emailServiceEnabled;
@@ -231,6 +235,52 @@ public class AuthService {
         tokenService.clearTokens(response);
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(refreshToken.getUser()));
+    }
+
+    public void recoverPassword(String email) {
+        userRepository.findByEmail(email)
+                .ifPresent(user -> {
+                    String recoveryToken = UUID.randomUUID().toString();
+
+                    VerificationToken newToken = VerificationToken.builder()
+                            .token(passwordEncoder.encode(recoveryToken))
+                            .tokenType(RESET_PASSWORD)
+                            .user(user)
+                            .expiresAt(Instant.now().plus(recoveryTokenExpirationMinutes, ChronoUnit.MINUTES))
+                            .build();
+
+                    verificationTokenRepository.save(newToken);
+                    mailService.sendRecoveryToken(user.getEmail(), recoveryToken, newToken.getId());
+                });
+    }
+
+    public VerificationToken validateRecoveryToken(String token, Long id) {
+        VerificationToken recoveryToken = verificationTokenRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Recovery Token not found"));
+
+        if(recoveryToken.getExpiresAt().isBefore(Instant.now()) || recoveryToken.isUsed()) {
+            throw new BadRequestException("Recovery token expired or used");
+        }
+
+        if(recoveryToken.getTokenType() != RESET_PASSWORD) {
+            throw new BadRequestException("Invalid Recovery Token");
+        }
+
+        if(!passwordEncoder.matches(token, recoveryToken.getToken())) {
+            throw new BadRequestException("Invalid Recovery Token");
+        }
+
+        return recoveryToken;
+    }
+
+    public void resetPassword(String token, Long id, String password) {
+        VerificationToken recoveryToken = validateRecoveryToken(token, id);
+        recoveryToken.setUsed(true);
+        verificationTokenRepository.save(recoveryToken);
+
+        User user = recoveryToken.getUser();
+        user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
     }
 
     private void deleteRevokedTokens(List<RefreshToken> userTokens) {

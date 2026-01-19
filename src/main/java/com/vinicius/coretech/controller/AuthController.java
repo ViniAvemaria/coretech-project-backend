@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -100,5 +102,36 @@ public class AuthController {
 
         authService.logout(refreshToken, response);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/recover-password")
+    public ResponseEntity<Void> recoverPassword(@RequestBody Map<String, String> request) {
+        authService.recoverPassword(request.get("email"));
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/validate-recovery-token")
+    public ResponseEntity<Void> validateRecoveryToken(@RequestParam String token, @RequestParam Long id) {
+        String status;
+
+        try {
+            authService.validateRecoveryToken(token, id);
+            status = "success";
+        } catch(BadRequestException e) {
+            status="failure";
+        } catch(ResourceNotFoundException e) {
+            status="not-found";
+        }
+
+        return ResponseEntity.status(302)
+                .header("Location",
+                        frontendUrl + "/reset-password?status=" + status + "&token=" + token + "&id=" + id)
+                .build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestParam String token, @RequestParam Long id, @RequestBody Map<String, String> request) {
+        authService.resetPassword(token, id, request.get("password"));
+        return ResponseEntity.ok().build();
     }
 }

@@ -46,6 +46,9 @@ public class SecurityConfiguration {
             "/auth/login",
             "/auth/refresh-token",
             "/auth/logout",
+            "/auth/recover-password",
+            "/auth/validate-recovery-token",
+            "/auth/reset-password",
             "/h2-console/**",
             "/swagger-ui/**",
             "/v3/api-docs/**"

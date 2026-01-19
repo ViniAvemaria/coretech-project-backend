@@ -33,4 +33,20 @@ public class MailService {
 
         mailSender.send(message);
     }
+
+    @Async
+    public void sendRecoveryToken(String to, String token, Long id) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setFrom(from);
+        message.setSubject("Password Recovery");
+        message.setText("You requested to reset your password.\n\n" +
+                        "Click the link below to create a new password:\n\n" +
+                        backendUrl + "/api/auth/validate-recovery-token?token=" + token + "&id=" + id +
+                        "\n\nThis link will expire in 15 minutes.\n\n" +
+                        "If you did not request this, you can safely ignore this email."
+        );
+
+        mailSender.send(message);
+    }
 }
