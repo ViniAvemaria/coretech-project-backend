@@ -43,7 +43,7 @@ public class ReviewController {
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(@PathVariable Long id, @RequestBody ReviewRequest request) {
         reviewService.update(id, request.comment(), request.rating());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")

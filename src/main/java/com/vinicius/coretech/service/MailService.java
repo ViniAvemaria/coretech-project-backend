@@ -41,10 +41,40 @@ public class MailService {
         message.setFrom(from);
         message.setSubject("Password Recovery");
         message.setText("You requested to reset your password.\n\n" +
-                        "Click the link below to create a new password:\n\n" +
-                        backendUrl + "/api/auth/validate-recovery-token?token=" + token + "&id=" + id +
-                        "\n\nThis link will expire in 15 minutes.\n\n" +
-                        "If you did not request this, you can safely ignore this email."
+                "Click the link below to create a new password:\n\n" +
+                backendUrl + "/api/auth/validate-recovery-token?token=" + token + "&id=" + id +
+                "\n\nThis link will expire in 15 minutes.\n\n" +
+                "If you did not request this, you can safely ignore this email."
+        );
+
+        mailSender.send(message);
+    }
+
+    @Async
+    public void sendChangeEmailToken(String to, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setFrom(from);
+        message.setSubject("Confirm Email Change");
+        message.setText("You requested to change your email address.\n\n" +
+                "Click the link below to confirm this change:\n\n" + token +
+                "\n\nThis link will expire in 5 minutes.\n\n" +
+                "If you did not request this, you can safely ignore this email."
+        );
+
+        mailSender.send(message);
+    }
+
+    @Async
+    public void sendChangePasswordToken(String to, String token) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setTo(to);
+        message.setFrom(from);
+        message.setSubject("Confirm Password Change");
+        message.setText("You requested to change your password.\n\n" +
+                "Click the link below to confirm this change:\n\n" + token +
+                "\n\nThis link will expire in 5 minutes.\n\n" +
+                "If you did not request this, you can safely ignore this email."
         );
 
         mailSender.send(message);

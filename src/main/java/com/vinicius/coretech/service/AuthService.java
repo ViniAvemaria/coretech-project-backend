@@ -3,6 +3,7 @@ package com.vinicius.coretech.service;
 import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.RefreshToken;
 import com.vinicius.coretech.entity.Role;
+import com.vinicius.coretech.entity.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.entity.VerificationToken;
 import com.vinicius.coretech.exception.BadRequestException;
@@ -32,9 +33,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-
-import static com.vinicius.coretech.entity.TokenType.CONFIRM_EMAIL;
-import static com.vinicius.coretech.entity.TokenType.RESET_PASSWORD;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -50,12 +49,19 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final TokenService tokenService;
+    private final SecurityService securityService;
 
     @Value("${token.confirm.expiration-hours}")
     private long confirmTokenExpirationHours;
 
     @Value("${token.recovery.expiration-minutes}")
     private long recoveryTokenExpirationMinutes;
+
+    @Value("${token.change-email.expiration-minutes}")
+    private long changeEmailExpirationMinutes;
+
+    @Value("${token.change-password.expiration-minutes}")
+    private long changePasswordExpirationMinutes;
 
     @Value("${email.service.enabled}")
     private boolean emailServiceEnabled;
@@ -86,7 +92,7 @@ public class AuthService {
 
             VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
                     .token(passwordEncoder.encode(confirmationToken))
-                    .tokenType(CONFIRM_EMAIL)
+                    .tokenType(TokenType.CONFIRM_EMAIL)
                     .user(user)
                     .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
                     .build());
@@ -103,11 +109,7 @@ public class AuthService {
             throw new BadRequestException("Confirmation token expired or used");
         }
 
-        if(verificationToken.getTokenType() != CONFIRM_EMAIL) {
-            throw new BadRequestException("Invalid Confirmation Token");
-        }
-
-        if(!passwordEncoder.matches(token, verificationToken.getToken())) {
+        if(verificationToken.getTokenType() != TokenType.CONFIRM_EMAIL || !passwordEncoder.matches(token, verificationToken.getToken())) {
             throw new BadRequestException("Invalid Confirmation Token");
         }
 
@@ -137,11 +139,13 @@ public class AuthService {
             throw new ConflictException("This account has already been activated");
         }
 
+        verificationTokenRepository.delete(verificationToken);
+
         String confirmationToken = UUID.randomUUID().toString();
 
         VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
                 .token(passwordEncoder.encode(confirmationToken))
-                .tokenType(CONFIRM_EMAIL)
+                .tokenType(TokenType.CONFIRM_EMAIL)
                 .user(user)
                 .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
                 .build());
@@ -169,13 +173,13 @@ public class AuthService {
 
             deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
         } catch (DisabledException e) {
-            VerificationToken verificationToken = verificationTokenRepository.findByUser(user)
+            VerificationToken verificationToken = verificationTokenRepository.findByUserAndTokenType(user, TokenType.CONFIRM_EMAIL)
                     .orElseGet(() -> {
                         String confirmationToken = UUID.randomUUID().toString();
 
                         VerificationToken newToken = VerificationToken.builder()
                                 .token(passwordEncoder.encode(confirmationToken))
-                                .tokenType(CONFIRM_EMAIL)
+                                .tokenType(TokenType.CONFIRM_EMAIL)
                                 .user(user)
                                 .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
                                 .build();
@@ -244,7 +248,7 @@ public class AuthService {
 
                     VerificationToken newToken = VerificationToken.builder()
                             .token(passwordEncoder.encode(recoveryToken))
-                            .tokenType(RESET_PASSWORD)
+                            .tokenType(TokenType.RESET_PASSWORD)
                             .user(user)
                             .expiresAt(Instant.now().plus(recoveryTokenExpirationMinutes, ChronoUnit.MINUTES))
                             .build();
@@ -254,33 +258,50 @@ public class AuthService {
                 });
     }
 
-    public VerificationToken validateRecoveryToken(String token, Long id) {
-        VerificationToken recoveryToken = verificationTokenRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Recovery Token not found"));
-
-        if(recoveryToken.getExpiresAt().isBefore(Instant.now()) || recoveryToken.isUsed()) {
-            throw new BadRequestException("Recovery token expired or used");
-        }
-
-        if(recoveryToken.getTokenType() != RESET_PASSWORD) {
-            throw new BadRequestException("Invalid Recovery Token");
-        }
-
-        if(!passwordEncoder.matches(token, recoveryToken.getToken())) {
-            throw new BadRequestException("Invalid Recovery Token");
-        }
-
-        return recoveryToken;
-    }
-
     public void resetPassword(String token, Long id, String password) {
-        VerificationToken recoveryToken = validateRecoveryToken(token, id);
+        VerificationToken recoveryToken = tokenService.validateRecoveryToken(token, id);
         recoveryToken.setUsed(true);
         verificationTokenRepository.save(recoveryToken);
 
         User user = recoveryToken.getUser();
         user.setPassword(passwordEncoder.encode(password));
         userRepository.save(user);
+    }
+
+    public void changeEmail() {
+        User user =  securityService.getUserFromSecurityContext();
+
+        verificationTokenRepository.findByUserAndTokenType(user, TokenType.CHANGE_EMAIL)
+                .ifPresent(verificationTokenRepository::delete);
+
+        String changeEmailToken = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        verificationTokenRepository.save(VerificationToken.builder()
+                .token(passwordEncoder.encode(changeEmailToken))
+                .tokenType(TokenType.CHANGE_EMAIL)
+                .user(user)
+                .expiresAt(Instant.now().plus(changeEmailExpirationMinutes, ChronoUnit.MINUTES))
+                .build());
+
+        mailService.sendChangeEmailToken(user.getEmail(), changeEmailToken);
+    }
+
+    public void changePassword() {
+        User user =  securityService.getUserFromSecurityContext();
+
+        verificationTokenRepository.findByUserAndTokenType(user, TokenType.CHANGE_PASSWORD)
+                .ifPresent(verificationTokenRepository::delete);
+
+        String changePasswordToken = String.valueOf(ThreadLocalRandom.current().nextInt(100000, 1000000));
+
+        verificationTokenRepository.save(VerificationToken.builder()
+                .token(passwordEncoder.encode(changePasswordToken))
+                .tokenType(TokenType.CHANGE_PASSWORD)
+                .user(user)
+                .expiresAt(Instant.now().plus(changePasswordExpirationMinutes, ChronoUnit.MINUTES))
+                .build());
+
+        mailService.sendChangePasswordToken(user.getEmail(), changePasswordToken);
     }
 
     private void deleteRevokedTokens(List<RefreshToken> userTokens) {

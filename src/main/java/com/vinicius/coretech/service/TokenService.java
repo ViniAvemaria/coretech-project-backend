@@ -1,14 +1,20 @@
 package com.vinicius.coretech.service;
 
 import com.vinicius.coretech.entity.RefreshToken;
+import com.vinicius.coretech.entity.TokenType;
 import com.vinicius.coretech.entity.User;
+import com.vinicius.coretech.entity.VerificationToken;
+import com.vinicius.coretech.exception.BadRequestException;
+import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.repository.RefreshTokenRepository;
+import com.vinicius.coretech.repository.VerificationTokenRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
@@ -24,6 +30,8 @@ public class TokenService {
 
     private final JwtEncoder jwtEncoder;
     private final RefreshTokenRepository refreshTokenRepository;
+    private final VerificationTokenRepository verificationTokenRepository;
+    private final PasswordEncoder passwordEncoder;
 
     @Value("${jwt.access-token.expiration-minutes}")
     private long accessTokenExpirationMinutes;
@@ -104,5 +112,35 @@ public class TokenService {
                 .build();
 
         response.addHeader("Set-Cookie", refreshToken.toString());
+    }
+
+    public VerificationToken validateRecoveryToken(String token, Long id) {
+        VerificationToken recoveryToken = verificationTokenRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Recovery Token not found"));
+
+        if(recoveryToken.getExpiresAt().isBefore(Instant.now()) || recoveryToken.isUsed()) {
+            throw new BadRequestException("Recovery token expired or used");
+        }
+
+        if(recoveryToken.getTokenType() != TokenType.RESET_PASSWORD || !passwordEncoder.matches(token, recoveryToken.getToken())) {
+            throw new BadRequestException("Invalid Recovery Token");
+        }
+
+        return recoveryToken;
+    }
+
+    public VerificationToken validateEmailAndPasswordChange(String token, TokenType tokenType, User user) {
+        VerificationToken verificationToken = verificationTokenRepository.findByUserAndTokenType(user, tokenType)
+                .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
+
+        if(verificationToken.getExpiresAt().isBefore(Instant.now()) || verificationToken.isUsed()) {
+            throw new BadRequestException("Token expired or used");
+        }
+
+        if(verificationToken.getTokenType() != tokenType || !passwordEncoder.matches(token, verificationToken.getToken())) {
+            throw new BadRequestException("Invalid Token");
+        }
+
+        return verificationToken;
     }
 }

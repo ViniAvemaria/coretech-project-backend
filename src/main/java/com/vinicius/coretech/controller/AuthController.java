@@ -2,10 +2,14 @@ package com.vinicius.coretech.controller;
 
 import com.vinicius.coretech.dto.Request.LoginUserRequest;
 import com.vinicius.coretech.dto.Request.RegisterUserRequest;
+import com.vinicius.coretech.entity.TokenType;
+import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.service.AuthService;
+import com.vinicius.coretech.service.SecurityService;
+import com.vinicius.coretech.service.TokenService;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,6 +31,8 @@ import java.util.Map;
 public class AuthController {
 
     private final AuthService authService;
+    private final SecurityService securityService;
+    private final TokenService tokenService;
 
     @Value("${app.frontend-base-url}")
     private String frontendUrl;
@@ -78,7 +84,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<Void> login(@RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
         authService.login(loginUserRequest.email(), loginUserRequest.password(), response);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/refresh-token")
@@ -91,7 +97,7 @@ public class AuthController {
         }
 
         authService.refresh(refreshToken, response);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/logout")
@@ -107,7 +113,7 @@ public class AuthController {
     @PostMapping("/recover-password")
     public ResponseEntity<Void> recoverPassword(@RequestBody Map<String, String> request) {
         authService.recoverPassword(request.get("email"));
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/validate-recovery-token")
@@ -115,7 +121,7 @@ public class AuthController {
         String status;
 
         try {
-            authService.validateRecoveryToken(token, id);
+            tokenService.validateRecoveryToken(token, id);
             status = "success";
         } catch(BadRequestException e) {
             status="failure";
@@ -132,6 +138,32 @@ public class AuthController {
     @PostMapping("/reset-password")
     public ResponseEntity<Void> resetPassword(@RequestParam String token, @RequestParam Long id, @RequestBody Map<String, String> request) {
         authService.resetPassword(token, id, request.get("password"));
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/change-email")
+    public ResponseEntity<Void> changeEmail() {
+        authService.changeEmail();
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/change-password")
+    public ResponseEntity<Void> changePassword() {
+        authService.changePassword();
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/validate-email-change")
+    public ResponseEntity<Void> validateEmailChange(@RequestBody Map<String, String> request) {
+        User user = securityService.getUserFromSecurityContext();
+        tokenService.validateEmailAndPasswordChange(request.get("token"), TokenType.CHANGE_EMAIL, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/validate-password-change")
+    public ResponseEntity<Void> validatePasswordChange(@RequestBody Map<String, String> request) {
+        User user = securityService.getUserFromSecurityContext();
+        tokenService.validateEmailAndPasswordChange(request.get("token"), TokenType.CHANGE_PASSWORD, user);
+        return ResponseEntity.noContent().build();
     }
 }

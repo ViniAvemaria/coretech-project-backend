@@ -36,13 +36,13 @@ public class CartController {
     @PostMapping("/increment/{id}")
     public ResponseEntity<Void> incrementItem(@PathVariable Long id) {
         cartService.incrementItem(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/decrement/{id}")
     public ResponseEntity<Void> decrementItem(@PathVariable Long id) {
         cartService.decrementItem(id);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
