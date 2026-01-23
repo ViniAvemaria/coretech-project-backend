@@ -45,6 +45,7 @@ public class Product {
 
     private Double price;
 
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Review> reviews = new ArrayList<>();
 
@@ -69,6 +70,7 @@ public class Product {
     @UpdateTimestamp
     private Instant updatedAt;
 
+    @Builder.Default
     @OneToMany(mappedBy = "product", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<CartItem> cartItems = new ArrayList<>();
 }
