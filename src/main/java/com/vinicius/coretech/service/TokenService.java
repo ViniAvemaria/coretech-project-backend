@@ -57,7 +57,7 @@ public class TokenService {
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(accessTokenExpirationMinutes * 60)
                 .sameSite("Lax")
@@ -76,7 +76,7 @@ public class TokenService {
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
                 .sameSite("Lax")
@@ -95,7 +95,7 @@ public class TokenService {
     public void clearTokens(HttpServletResponse response) {
         ResponseCookie accessToken = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0)
                 .sameSite("Lax")
@@ -105,7 +105,7 @@ public class TokenService {
 
         ResponseCookie refreshToken = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(false)
+                .secure(true)
                 .path("/")
                 .maxAge(0)
                     .sameSite("Lax")
