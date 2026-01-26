@@ -60,7 +60,7 @@ public class TokenService {
                 .secure(true)
                 .path("/")
                 .maxAge(accessTokenExpirationMinutes * 60)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
         response.addHeader("Set-Cookie", accessCookie.toString());
 
@@ -79,7 +79,7 @@ public class TokenService {
                 .secure(true)
                 .path("/")
                 .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
@@ -98,7 +98,7 @@ public class TokenService {
                 .secure(true)
                 .path("/")
                 .maxAge(0)
-                .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         response.addHeader("Set-Cookie", accessToken.toString());
@@ -108,7 +108,7 @@ public class TokenService {
                 .secure(true)
                 .path("/")
                 .maxAge(0)
-                    .sameSite("Lax")
+                .sameSite("None")
                 .build();
 
         response.addHeader("Set-Cookie", refreshToken.toString());
