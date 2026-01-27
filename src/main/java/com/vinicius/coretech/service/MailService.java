@@ -2,16 +2,19 @@ package com.vinicius.coretech.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
 public class MailService {
 
-    private final JavaMailSender mailSender;
+    private final WebClient.Builder webClientBuilder;
 
     @Value("${app.backend-base-url}")
     private String backendUrl;
@@ -19,64 +22,78 @@ public class MailService {
     @Value("${email.sender.from}")
     private String from;
 
+    @Value("${MAIL_API}")
+    private String mailApiToken;
+
+    private WebClient client() {
+        return webClientBuilder
+                .baseUrl("https://send.api.mailtrap.io/api/send")
+                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + mailApiToken)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build();
+    }
+
     @Async
     public void sendConfirmationToken(String to, String token, Long id) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setFrom(from);
-        message.setSubject("Account confirmation");
-        message.setText("Welcome! Please activate your account by clicking the link below:\n\n" +
-                backendUrl + "/api/auth/confirm-email?token=" + token + "&id=" + id +
-                "\n\nThis link will expire in 24 hours." +
-                "\n\nIf your link expires, request a new one here:\n" +
-                backendUrl + "/api/auth/resend-confirmation?token=" + token + "&id=" + id);
-
-        mailSender.send(message);
+        sendEmail(
+                to,
+                "Account confirmation",
+                "Welcome! Please activate your account by clicking the link below:\n\n" +
+                        backendUrl + "/api/auth/confirm-email?token=" + token + "&id=" + id +
+                        "\n\nThis link will expire in 24 hours." +
+                        "\n\nIf your link expires, request a new one here:\n" +
+                        backendUrl + "/api/auth/resend-confirmation?token=" + token + "&id=" + id
+        );
     }
 
     @Async
     public void sendRecoveryToken(String to, String token, Long id) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setFrom(from);
-        message.setSubject("Password Recovery");
-        message.setText("You requested to reset your password.\n\n" +
-                "Click the link below to create a new password:\n\n" +
-                backendUrl + "/api/auth/validate-recovery-token?token=" + token + "&id=" + id +
-                "\n\nThis link will expire in 15 minutes.\n\n" +
-                "If you did not request this, you can safely ignore this email."
+        sendEmail(
+                to,
+                "Password Recovery",
+                "You requested to reset your password.\n\n" +
+                        "Click the link below to create a new password:\n\n" +
+                        backendUrl + "/api/auth/validate-recovery-token?token=" + token + "&id=" + id +
+                        "\n\nThis link will expire in 15 minutes.\n\n" +
+                        "If you did not request this, you can safely ignore this email."
         );
-
-        mailSender.send(message);
     }
 
     @Async
     public void sendChangeEmailToken(String to, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setFrom(from);
-        message.setSubject("Confirm Email Change");
-        message.setText("You requested to change your email address.\n\n" +
-                "Click the link below to confirm this change:\n\n" + token +
-                "\n\nThis link will expire in 5 minutes.\n\n" +
-                "If you did not request this, you can safely ignore this email."
+        sendEmail(
+                to,
+                "Confirm Email Change",
+                "You requested to change your email address.\n\n" +
+                        "Click the link below to confirm this change:\n\n" + token +
+                        "\n\nThis link will expire in 5 minutes.\n\n" +
+                        "If you did not request this, you can safely ignore this email."
         );
-
-        mailSender.send(message);
     }
 
     @Async
     public void sendChangePasswordToken(String to, String token) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setFrom(from);
-        message.setSubject("Confirm Password Change");
-        message.setText("You requested to change your password.\n\n" +
-                "Click the link below to confirm this change:\n\n" + token +
-                "\n\nThis link will expire in 5 minutes.\n\n" +
-                "If you did not request this, you can safely ignore this email."
+        sendEmail(
+                to,
+                "Confirm Password Change",
+                "You requested to change your password.\n\n" +
+                        "Click the link below to confirm this change:\n\n" + token +
+                        "\n\nThis link will expire in 5 minutes.\n\n" +
+                        "If you did not request this, you can safely ignore this email."
         );
+    }
 
-        mailSender.send(message);
+    private void sendEmail(String to, String subject, String text) {
+        client()
+                .post()
+                .bodyValue(Map.of(
+                        "from", Map.of("email", from),
+                        "to", new Object[]{Map.of("email", to)},
+                        "subject", subject,
+                        "text", text
+                ))
+                .retrieve()
+                .toBodilessEntity()
+                .subscribe();
     }
 }
