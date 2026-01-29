@@ -39,6 +39,12 @@ public class TokenService {
     @Value("${jwt.refresh-token.expiration-days}")
     private long refreshTokenExpirationDays;
 
+    @Value("${cookie.secure}")
+    private boolean cookieSecure;
+
+    @Value("${cookie.same-site}")
+    private String cookieSameSite;
+
     public void generateTokens(Authentication auth, HttpServletResponse response, User user) {
         Instant now = Instant.now();
 
@@ -57,10 +63,10 @@ public class TokenService {
 
         ResponseCookie accessCookie = ResponseCookie.from("accessToken", accessToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(accessTokenExpirationMinutes * 60)
-                .sameSite("None")
+                .sameSite(cookieSameSite)
                 .build();
         response.addHeader("Set-Cookie", accessCookie.toString());
 
@@ -76,10 +82,10 @@ public class TokenService {
 
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", refreshToken)
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
-                .sameSite("None")
+                .sameSite(cookieSameSite)
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
@@ -95,20 +101,20 @@ public class TokenService {
     public void clearTokens(HttpServletResponse response) {
         ResponseCookie accessToken = ResponseCookie.from("accessToken", "")
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(0)
-                .sameSite("None")
+                .sameSite(cookieSameSite)
                 .build();
 
         response.addHeader("Set-Cookie", accessToken.toString());
 
         ResponseCookie refreshToken = ResponseCookie.from("refreshToken", "")
                 .httpOnly(true)
-                .secure(true)
+                .secure(cookieSecure)
                 .path("/")
                 .maxAge(0)
-                .sameSite("None")
+                .sameSite(cookieSameSite)
                 .build();
 
         response.addHeader("Set-Cookie", refreshToken.toString());
