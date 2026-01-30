@@ -1,7 +1,10 @@
 package com.vinicius.coretech.controller;
 
 import com.vinicius.coretech.dto.Request.LoginUserRequest;
+import com.vinicius.coretech.dto.Request.RecoverPasswordRequest;
 import com.vinicius.coretech.dto.Request.RegisterUserRequest;
+import com.vinicius.coretech.dto.Request.ResetPasswordRequest;
+import com.vinicius.coretech.dto.Request.ValidationTokenRequest;
 import com.vinicius.coretech.entity.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.exception.BadRequestException;
@@ -11,10 +14,14 @@ import com.vinicius.coretech.service.AuthService;
 import com.vinicius.coretech.service.SecurityService;
 import com.vinicius.coretech.service.TokenService;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -23,8 +30,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
-
+@Validated
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/auth")
@@ -38,13 +44,13 @@ public class AuthController {
     private String frontendUrl;
 
     @PostMapping("/register")
-    public ResponseEntity<Void> register(@RequestBody RegisterUserRequest registerUserRequest) {
+    public ResponseEntity<Void> register(@Valid @RequestBody RegisterUserRequest registerUserRequest) {
         authService.register(registerUserRequest.firstName(), registerUserRequest.lastName(), registerUserRequest.email(), registerUserRequest.password());
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping("/confirm-email")
-    public ResponseEntity<Void> confirmEmail(@RequestParam String token, @RequestParam Long id) {
+    public ResponseEntity<Void> confirmEmail(@NotBlank @RequestParam String token, @Min(1) @RequestParam Long id) {
         String status;
 
         try {
@@ -63,7 +69,7 @@ public class AuthController {
     }
 
     @GetMapping("/resend-confirmation")
-    public ResponseEntity<Void> resendConfirmation(@RequestParam String token, @RequestParam Long id) {
+    public ResponseEntity<Void> resendConfirmation(@NotBlank @RequestParam String token, @Min(1) @RequestParam Long id) {
         String status;
 
         try {
@@ -82,7 +88,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Void> login(@RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
+    public ResponseEntity<Void> login(@Valid @RequestBody LoginUserRequest loginUserRequest, HttpServletResponse response) {
         authService.login(loginUserRequest.email(), loginUserRequest.password(), response);
         return ResponseEntity.noContent().build();
     }
@@ -111,13 +117,13 @@ public class AuthController {
     }
 
     @PostMapping("/recover-password")
-    public ResponseEntity<Void> recoverPassword(@RequestBody Map<String, String> request) {
-        authService.recoverPassword(request.get("email"));
+    public ResponseEntity<Void> recoverPassword(@Valid @RequestBody RecoverPasswordRequest request) {
+        authService.recoverPassword(request.email());
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/validate-recovery-token")
-    public ResponseEntity<Void> validateRecoveryToken(@RequestParam String token, @RequestParam Long id) {
+    public ResponseEntity<Void> validateRecoveryToken(@NotBlank @RequestParam String token, @Min(1) @RequestParam Long id) {
         String status;
 
         try {
@@ -136,8 +142,8 @@ public class AuthController {
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@RequestParam String token, @RequestParam Long id, @RequestBody Map<String, String> request) {
-        authService.resetPassword(token, id, request.get("password"));
+    public ResponseEntity<Void> resetPassword(@NotBlank @RequestParam String token, @Min(1) @RequestParam Long id, @Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(token, id, request.password());
         return ResponseEntity.noContent().build();
     }
 
@@ -154,16 +160,16 @@ public class AuthController {
     }
 
     @PostMapping("/validate-email-change")
-    public ResponseEntity<Void> validateEmailChange(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Void> validateEmailChange(@Valid @RequestBody ValidationTokenRequest request) {
         User user = securityService.getUserFromSecurityContext();
-        tokenService.validateEmailAndPasswordChange(request.get("token"), TokenType.CHANGE_EMAIL, user);
+        tokenService.validateEmailAndPasswordChange(request.token(), TokenType.CHANGE_EMAIL, user);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/validate-password-change")
-    public ResponseEntity<Void> validatePasswordChange(@RequestBody Map<String, String> request) {
+    public ResponseEntity<Void> validatePasswordChange(@Valid @RequestBody ValidationTokenRequest request) {
         User user = securityService.getUserFromSecurityContext();
-        tokenService.validateEmailAndPasswordChange(request.get("token"), TokenType.CHANGE_PASSWORD, user);
+        tokenService.validateEmailAndPasswordChange(request.token(), TokenType.CHANGE_PASSWORD, user);
         return ResponseEntity.noContent().build();
     }
 }

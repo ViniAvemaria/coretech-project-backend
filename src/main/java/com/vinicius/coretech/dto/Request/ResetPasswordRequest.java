@@ -1,14 +1,9 @@
 package com.vinicius.coretech.dto.Request;
 
-import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record LoginUserRequest(
-        @NotBlank
-        @Email
-        String email,
-
+public record ResetPasswordRequest(
         @NotBlank
         @Size(min = 8)
         String password

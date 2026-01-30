@@ -37,6 +37,7 @@ public class UserService implements UserDetailsService {
         return AuthUserResponse.from(securityService.getUserFromSecurityContext());
     }
 
+    @Transactional
     public void updateEmail(String email, String token, TokenType tokenType) {
         User user = securityService.getUserFromSecurityContext();
 
@@ -49,6 +50,7 @@ public class UserService implements UserDetailsService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void updatePassword(String password, String token, TokenType tokenType) {
         User user = securityService.getUserFromSecurityContext();
 
@@ -58,6 +60,16 @@ public class UserService implements UserDetailsService {
         verificationTokenRepository.save(verificationToken);
 
         user.setPassword(passwordEncoder.encode(password));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateName(String firstName, String lastName) {
+        User user = securityService.getUserFromSecurityContext();
+
+        user.setFirstName(firstName);
+        user.setLastName(lastName);
+
         userRepository.save(user);
     }
 }

@@ -1,9 +1,13 @@
 package com.vinicius.coretech.controller;
 
+import com.vinicius.coretech.dto.Request.EmailRequest;
+import com.vinicius.coretech.dto.Request.NameRequest;
+import com.vinicius.coretech.dto.Request.PasswordRequest;
 import com.vinicius.coretech.dto.Response.ApiResponse;
 import com.vinicius.coretech.dto.Response.AuthUserResponse;
 import com.vinicius.coretech.entity.TokenType;
 import com.vinicius.coretech.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +15,6 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,14 +29,20 @@ public class UserController {
     }
 
     @PatchMapping("/update-email")
-    public ResponseEntity<Void> updateEmail(@RequestBody Map<String, String> request) {
-        userService.updateEmail(request.get("email"), request.get("token"), TokenType.CHANGE_EMAIL);
+    public ResponseEntity<Void> updateEmail(@Valid @RequestBody EmailRequest request) {
+        userService.updateEmail(request.email(), request.token(), TokenType.CHANGE_EMAIL);
         return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/update-password")
-    public ResponseEntity<Void> updatePassword(@RequestBody Map<String, String> request) {
-        userService.updatePassword(request.get("password"), request.get("token"), TokenType.CHANGE_PASSWORD);
+    public ResponseEntity<Void> updatePassword(@Valid @RequestBody PasswordRequest request) {
+        userService.updatePassword(request.password(), request.token(), TokenType.CHANGE_PASSWORD);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/update-name")
+    public ResponseEntity<Void> updateName(@Valid @RequestBody NameRequest request) {
+        userService.updateName(request.firstName(), request.lastName());
         return ResponseEntity.noContent().build();
     }
 }
