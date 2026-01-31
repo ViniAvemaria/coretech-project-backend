@@ -135,16 +135,31 @@ public class TokenService {
         return recoveryToken;
     }
 
-    public VerificationToken validateEmailAndPasswordChange(String token, TokenType tokenType, User user) {
-        VerificationToken verificationToken = verificationTokenRepository.findByUserAndTokenType(user, tokenType)
-                .orElseThrow(() -> new ResourceNotFoundException("Token not found"));
+    public VerificationToken validateLinkToken(String token, TokenType tokenType, Long id) {
+        VerificationToken verificationToken = verificationTokenRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Link not found"));
 
         if(verificationToken.getExpiresAt().isBefore(Instant.now()) || verificationToken.isUsed()) {
-            throw new BadRequestException("Token expired or used");
+            throw new BadRequestException("Link expired or used");
         }
 
         if(verificationToken.getTokenType() != tokenType || !passwordEncoder.matches(token, verificationToken.getToken())) {
-            throw new BadRequestException("Invalid Token");
+            throw new BadRequestException("Invalid link");
+        }
+
+        return verificationToken;
+    }
+
+    public VerificationToken validateDigitToken(String token, TokenType tokenType, User user) {
+        VerificationToken verificationToken = verificationTokenRepository.findByUserAndTokenType(user, tokenType)
+                .orElseThrow(() -> new ResourceNotFoundException("Code not found"));
+
+        if(verificationToken.getExpiresAt().isBefore(Instant.now()) || verificationToken.isUsed()) {
+            throw new BadRequestException("Code expired or used");
+        }
+
+        if(verificationToken.getTokenType() != tokenType || !passwordEncoder.matches(token, verificationToken.getToken())) {
+            throw new BadRequestException("Invalid code");
         }
 
         return verificationToken;

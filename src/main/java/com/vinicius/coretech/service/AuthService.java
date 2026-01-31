@@ -6,7 +6,6 @@ import com.vinicius.coretech.entity.Role;
 import com.vinicius.coretech.entity.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.entity.VerificationToken;
-import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.exception.RoleNotFoundException;
@@ -63,6 +62,9 @@ public class AuthService {
     @Value("${token.change-password.expiration-minutes}")
     private long changePasswordExpirationMinutes;
 
+    @Value("${token.delete-account.expiration-minutes}")
+    private long deleteAccountExpirationMinutes;
+
     @Value("${email.service.enabled}")
     private boolean emailServiceEnabled;
 
@@ -102,16 +104,7 @@ public class AuthService {
     }
 
     public void confirmEmail(String token, Long id){
-        VerificationToken verificationToken = verificationTokenRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Confirmation Token not found"));
-
-        if(verificationToken.getExpiresAt().isBefore(Instant.now()) || verificationToken.isUsed()) {
-            throw new BadRequestException("Confirmation token expired or used");
-        }
-
-        if(verificationToken.getTokenType() != TokenType.CONFIRM_EMAIL || !passwordEncoder.matches(token, verificationToken.getToken())) {
-            throw new BadRequestException("Invalid Confirmation Token");
-        }
+        VerificationToken verificationToken = tokenService.validateLinkToken(token, TokenType.CONFIRM_EMAIL, id);
 
         verificationToken.setUsed(true);
         verificationTokenRepository.save(verificationToken);
@@ -122,16 +115,7 @@ public class AuthService {
     }
 
     public void resendConfirmation(String token, Long id) {
-        VerificationToken verificationToken = verificationTokenRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Confirmation Token not found"));
-
-        if(!verificationToken.getExpiresAt().isBefore(Instant.now()) && !verificationToken.isUsed()) {
-            throw new ConflictException("There's still a valid Confirmation Token");
-        }
-
-        if(!passwordEncoder.matches(token, verificationToken.getToken())) {
-            throw new BadRequestException("Invalid Confirmation Token");
-        }
+        VerificationToken verificationToken = tokenService.validateLinkToken(token, TokenType.CONFIRM_EMAIL, id);
 
         User user = verificationToken.getUser();
 
@@ -236,8 +220,6 @@ public class AuthService {
         refreshToken.setRevoked(true);
         refreshTokenRepository.save(refreshToken);
 
-        tokenService.clearTokens(response);
-
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(refreshToken.getUser()));
     }
 
@@ -302,6 +284,25 @@ public class AuthService {
                 .build());
 
         mailService.sendChangePasswordToken(user.getEmail(), changePasswordToken);
+    }
+
+    public void deleteAccount() {
+        User user =  securityService.getUserFromSecurityContext();
+
+        verificationTokenRepository.findByUserAndTokenType(user, TokenType.DELETE_ACCOUNT)
+                .ifPresent(verificationTokenRepository::delete);
+
+        String deletionToken = UUID.randomUUID().toString();
+
+        VerificationToken newToken = VerificationToken.builder()
+                .token(passwordEncoder.encode(deletionToken))
+                .tokenType(TokenType.DELETE_ACCOUNT)
+                .user(user)
+                .expiresAt(Instant.now().plus(deleteAccountExpirationMinutes, ChronoUnit.MINUTES))
+                .build();
+
+        verificationTokenRepository.save(newToken);
+        mailService.sendDeleteAccountToken(user.getEmail(), deletionToken, newToken.getId());
     }
 
     private void deleteRevokedTokens(List<RefreshToken> userTokens) {

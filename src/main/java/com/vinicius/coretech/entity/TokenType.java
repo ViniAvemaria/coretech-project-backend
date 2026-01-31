@@ -5,4 +5,5 @@ public enum TokenType {
     RESET_PASSWORD,
     CHANGE_EMAIL,
     CHANGE_PASSWORD,
+    DELETE_ACCOUNT
 }

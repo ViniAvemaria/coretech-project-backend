@@ -83,6 +83,18 @@ public class MailService {
         );
     }
 
+    @Async
+    public void sendDeleteAccountToken(String to, String token, Long id) {
+        sendEmail(
+                to,
+                "Delete Account",
+                "You requested to delete your account.\n\n" +
+                        "Click the link below to confirm this action:\n\n" +
+                        backendUrl + "/api/auth/confirm-delete-account?token=" + token + "&id=" + id +
+                        "\n\nThis link will expire in 30 minutes."
+        );
+    }
+
     private void sendEmail(String to, String subject, String text) {
         client()
                 .post()

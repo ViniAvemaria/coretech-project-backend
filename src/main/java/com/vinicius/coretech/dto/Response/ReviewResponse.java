@@ -10,18 +10,16 @@ public record ReviewResponse(
         Double rating,
         String comment,
         String firstName,
-        String lastName,
         Instant createdAt,
         Instant updatedAt
 ) {
     public static ReviewResponse from(Review review) {
         return new ReviewResponse(
                 review.getId(),
-                review.getUser().getId(),
+                review.getUser() != null ? review.getUser().getId() : null,
                 review.getRating(),
                 review.getComment(),
-                review.getUser().getFirstName(),
-                review.getUser().getLastName(),
+                review.getUser() != null ? review.getUser().getFirstName() : "Deleted User",
                 review.getCreatedAt(),
                 review.getUpdatedAt()
         );

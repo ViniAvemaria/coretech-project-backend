@@ -3,6 +3,7 @@ package com.vinicius.coretech.advice;
 import com.vinicius.coretech.dto.Response.ApiError;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;
+import com.vinicius.coretech.exception.ForbiddenException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.exception.UnauthorizedException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -124,5 +125,16 @@ public class ExceptionAdvice {
                 Instant.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ApiError> handleForbidden(ForbiddenException ex, HttpServletRequest request) {
+        ApiError error = new ApiError(
+                "Forbidden",
+                ex.getMessage(),
+                request.getRequestURI(),
+                Instant.now()
+        );
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(error);
     }
 }

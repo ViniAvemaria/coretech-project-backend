@@ -113,6 +113,7 @@ public class AuthController {
         }
 
         authService.logout(refreshToken, response);
+        tokenService.clearTokens(response);
         return ResponseEntity.noContent().build();
     }
 
@@ -162,14 +163,40 @@ public class AuthController {
     @PostMapping("/validate-email-change")
     public ResponseEntity<Void> validateEmailChange(@Valid @RequestBody ValidationTokenRequest request) {
         User user = securityService.getUserFromSecurityContext();
-        tokenService.validateEmailAndPasswordChange(request.token(), TokenType.CHANGE_EMAIL, user);
+        tokenService.validateDigitToken(request.token(), TokenType.CHANGE_EMAIL, user);
         return ResponseEntity.noContent().build();
     }
 
     @PostMapping("/validate-password-change")
     public ResponseEntity<Void> validatePasswordChange(@Valid @RequestBody ValidationTokenRequest request) {
         User user = securityService.getUserFromSecurityContext();
-        tokenService.validateEmailAndPasswordChange(request.token(), TokenType.CHANGE_PASSWORD, user);
+        tokenService.validateDigitToken(request.token(), TokenType.CHANGE_PASSWORD, user);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/delete-account")
+    public ResponseEntity<Void> deleteAccount() {
+        authService.deleteAccount();
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/confirm-delete-account")
+    public ResponseEntity<Void> confirmDeleteAccount(@NotBlank @RequestParam String token, @Min(1) @RequestParam Long id) {
+        String status;
+
+        try {
+            tokenService.validateLinkToken(token, TokenType.DELETE_ACCOUNT, id);
+            return ResponseEntity.status(302)
+                    .header("Location", frontendUrl + "/account-deletion?token=" + token + "&id=" + id )
+                    .build();
+        } catch (BadRequestException e) {
+            status = "deletion-failure";
+        } catch (ResourceNotFoundException e) {
+            status = "not-found";
+        }
+
+        return ResponseEntity.status(302)
+                .header("Location", frontendUrl + "/account-status?status=" + status)
+                .build();
     }
 }

@@ -4,8 +4,10 @@ import com.vinicius.coretech.dto.Response.AuthUserResponse;
 import com.vinicius.coretech.entity.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.entity.VerificationToken;
+import com.vinicius.coretech.exception.ForbiddenException;
 import com.vinicius.coretech.repository.UserRepository;
 import com.vinicius.coretech.repository.VerificationTokenRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -41,7 +43,7 @@ public class UserService implements UserDetailsService {
     public void updateEmail(String email, String token, TokenType tokenType) {
         User user = securityService.getUserFromSecurityContext();
 
-        VerificationToken verificationToken = tokenService.validateEmailAndPasswordChange(token, tokenType, user);
+        VerificationToken verificationToken = tokenService.validateDigitToken(token, tokenType, user);
 
         verificationToken.setUsed(true);
         verificationTokenRepository.save(verificationToken);
@@ -54,7 +56,7 @@ public class UserService implements UserDetailsService {
     public void updatePassword(String password, String token, TokenType tokenType) {
         User user = securityService.getUserFromSecurityContext();
 
-        VerificationToken verificationToken = tokenService.validateEmailAndPasswordChange(token, tokenType, user);
+        VerificationToken verificationToken = tokenService.validateDigitToken(token, tokenType, user);
 
         verificationToken.setUsed(true);
         verificationTokenRepository.save(verificationToken);
@@ -71,5 +73,21 @@ public class UserService implements UserDetailsService {
         user.setLastName(lastName);
 
         userRepository.save(user);
+    }
+
+    @Transactional
+    public void deleteUser(String token,  TokenType tokenType, Long id, HttpServletResponse response) {
+        User user = securityService.getUserFromSecurityContext();
+
+        VerificationToken deleteToken = tokenService.validateLinkToken(token, tokenType, id);
+
+        if(!user.equals(deleteToken.getUser())) {
+            throw new ForbiddenException("You are not allowed to do this action");
+        }
+
+        deleteToken.setUsed(true);
+        verificationTokenRepository.save(deleteToken);
+
+        userRepository.delete(user);
     }
 }

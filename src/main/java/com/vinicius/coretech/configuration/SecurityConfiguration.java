@@ -50,6 +50,7 @@ public class SecurityConfiguration {
             "/auth/recover-password",
             "/auth/validate-recovery-token",
             "/auth/reset-password",
+            "/auth/confirm-delete-account",
             "/h2-console/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
