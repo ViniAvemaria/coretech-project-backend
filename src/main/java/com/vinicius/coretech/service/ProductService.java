@@ -1,6 +1,7 @@
 package com.vinicius.coretech.service;
 
 import com.vinicius.coretech.dto.Request.ProductRequest;
+import com.vinicius.coretech.dto.Response.PageResponse;
 import com.vinicius.coretech.dto.Response.ProductResponse;
 import com.vinicius.coretech.entity.Category;
 import com.vinicius.coretech.entity.PhotoCredit;
@@ -17,6 +18,8 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,7 +28,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -42,14 +44,15 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductResponse> getAll(String category, String search) {
+    public PageResponse<ProductResponse> getAll(String category, String search, Pageable pageable) {
         Specification<Product> spec = Specification.where(ProductSpecs.hasCategory(category))
                 .and(ProductSpecs.hasSearch(search));
 
-        return productRepository.findAll(spec)
-                .stream()
-                .map(ProductResponse::from)
-                .collect(Collectors.toList());
+        Page<ProductResponse> page = productRepository
+                .findAll(spec, pageable)
+                .map(ProductResponse::from);
+
+        return PageResponse.from(page);
     }
 
     @Transactional
