@@ -65,6 +65,7 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
+                .domain(".coretechstore.dedyn.io")
                 .maxAge(accessTokenExpirationMinutes * 60)
                 .sameSite(cookieSameSite)
                 .build();
@@ -84,6 +85,7 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
+                .domain(".coretechstore.dedyn.io")
                 .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
                 .sameSite(cookieSameSite)
                 .build();
@@ -103,6 +105,7 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
+                .domain(".coretechstore.dedyn.io")
                 .maxAge(0)
                 .sameSite(cookieSameSite)
                 .build();
@@ -113,6 +116,7 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
+                .domain(".coretechstore.dedyn.io")
                 .maxAge(0)
                 .sameSite(cookieSameSite)
                 .build();
