@@ -42,8 +42,8 @@ public class TokenService {
     @Value("${cookie.secure}")
     private boolean cookieSecure;
 
-    @Value("${cookie.same-site}")
-    private String cookieSameSite;
+    @Value("${cookie.domain}")
+    private String cookieDomain;
 
     public void generateTokens(Authentication auth, HttpServletResponse response, User user) {
         Instant now = Instant.now();
@@ -65,9 +65,9 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .domain(".coretechstore.dedyn.io")
+                .domain(cookieDomain)
                 .maxAge(accessTokenExpirationMinutes * 60)
-                .sameSite(cookieSameSite)
+                .sameSite("Lax")
                 .build();
         response.addHeader("Set-Cookie", accessCookie.toString());
 
@@ -85,9 +85,9 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .domain(".coretechstore.dedyn.io")
+                .domain(cookieDomain)
                 .maxAge(refreshTokenExpirationDays * 24 * 60 * 60)
-                .sameSite(cookieSameSite)
+                .sameSite("Lax")
                 .build();
         response.addHeader("Set-Cookie", refreshCookie.toString());
 
@@ -105,9 +105,9 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .domain(".coretechstore.dedyn.io")
+                .domain(cookieDomain)
                 .maxAge(0)
-                .sameSite(cookieSameSite)
+                .sameSite("Lax")
                 .build();
 
         response.addHeader("Set-Cookie", accessToken.toString());
@@ -116,9 +116,9 @@ public class TokenService {
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .path("/")
-                .domain(".coretechstore.dedyn.io")
+                .domain(cookieDomain)
                 .maxAge(0)
-                .sameSite(cookieSameSite)
+                .sameSite("Lax")
                 .build();
 
         response.addHeader("Set-Cookie", refreshToken.toString());
