@@ -19,6 +19,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -53,6 +54,36 @@ public class ProductService {
                 .map(ProductResponse::from);
 
         return PageResponse.from(page);
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<ProductResponse> getAdvancedSort(
+            String category,
+            String search,
+            String sort,
+            Pageable pageable
+    ) {
+
+        Pageable cleanPageable = PageRequest.of(
+                pageable.getPageNumber(),
+                pageable.getPageSize()
+        );
+
+        Page<Product> page;
+
+        switch (sort) {
+            case "reviews-desc" -> page = productRepository.findByMostReviews(category, search, cleanPageable);
+            case "reviews-asc" -> page = productRepository.findByLeastReviews(category, search, cleanPageable);
+            case "rating-desc" -> page = productRepository.findByHighestRating(category, search, cleanPageable);
+            case "rating-asc" -> page = productRepository.findByLowestRating(category, search, cleanPageable);
+            case null, default -> {
+                Specification<Product> spec = Specification.where(ProductSpecs.hasCategory(category))
+                        .and(ProductSpecs.hasSearch(search));
+                page = productRepository.findAll(spec, pageable);
+            }
+        }
+
+        return PageResponse.from(page.map(ProductResponse::from));
     }
 
     @Transactional
