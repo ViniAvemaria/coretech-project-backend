@@ -1,7 +1,9 @@
 package com.vinicius.coretech.service;
 
 import com.vinicius.coretech.dto.Request.OrderItemRequest;
+import com.vinicius.coretech.dto.Response.AdminOrderResponse;
 import com.vinicius.coretech.dto.Response.OrderResponse;
+import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.Order;
 import com.vinicius.coretech.entity.OrderItem;
 import com.vinicius.coretech.entity.OrderStatus;
@@ -9,6 +11,7 @@ import com.vinicius.coretech.entity.Product;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.exception.ConflictException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
+import com.vinicius.coretech.repository.CartRepository;
 import com.vinicius.coretech.repository.OrderRepository;
 import com.vinicius.coretech.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OrderService {
 
+    private final CartRepository cartRepository;
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final SecurityService securityService;
@@ -49,6 +53,14 @@ public class OrderService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<AdminOrderResponse> getAllOrdersForAdmin() {
+        return orderRepository.findAll()
+                .stream()
+                .map(AdminOrderResponse::from)
+                .toList();
+    }
+
     @Transactional
     public void create(List<OrderItemRequest> items) {
         User user = securityService.getUserFromSecurityContext();
@@ -73,7 +85,24 @@ public class OrderService {
 
         order.getItems().addAll(orderItems);
 
+        double subtotal = orderItems.stream()
+                .mapToDouble(i -> i.getPrice() * i.getQuantity())
+                .sum();
+
+        double taxAmount = subtotal * 0.10;
+        double shippingAmount = 10.00;
+        double total = subtotal + taxAmount + shippingAmount;
+
+        order.setSubtotal(subtotal);
+        order.setTaxAmount(taxAmount);
+        order.setShippingAmount(shippingAmount);
+        order.setTotalPrice(total);
+
         orderRepository.save(order);
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Cart not found"));
+        cart.getItems().clear();
     }
 
     @Transactional

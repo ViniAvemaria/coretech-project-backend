@@ -1,6 +1,7 @@
 package com.vinicius.coretech.controller;
 
 import com.vinicius.coretech.dto.Request.OrderRequest;
+import com.vinicius.coretech.dto.Response.AdminOrderResponse;
 import com.vinicius.coretech.dto.Response.ApiResponse;
 import com.vinicius.coretech.dto.Response.OrderResponse;
 import com.vinicius.coretech.entity.OrderStatus;
@@ -36,6 +37,11 @@ public class OrderController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrders() {
         return ResponseEntity.ok(new ApiResponse<>("Orders fetched successfully", orderService.getOrders()));
+    }
+
+    @GetMapping("/admin")
+    public ResponseEntity<ApiResponse<List<AdminOrderResponse>>> getAllForAdmin() {
+        return ResponseEntity.ok(new ApiResponse<>("All Orders fetched successfully", orderService.getAllOrdersForAdmin()));
     }
 
     @PostMapping

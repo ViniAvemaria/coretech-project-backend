@@ -87,6 +87,7 @@ public class SecurityConfiguration {
                         .requestMatchers(HttpMethod.PUT, "/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/products/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/orders/*/status").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/orders/admin").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

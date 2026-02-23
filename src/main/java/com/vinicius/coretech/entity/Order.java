@@ -49,6 +49,18 @@ public class Order {
     @Column(nullable = false)
     private OrderStatus status = OrderStatus.PENDING;
 
+    @Column(nullable = false)
+    private Double subtotal;
+
+    @Column(nullable = false)
+    private Double taxAmount;
+
+    @Column(nullable = false)
+    private Double shippingAmount;
+
+    @Column(nullable = false)
+    private Double totalPrice;
+
     @CreationTimestamp
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
