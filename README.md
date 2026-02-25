@@ -33,6 +33,10 @@ O projeto está hospedado em ambiente cloud com a seguinte arquitetura:
 - Backend: [Render](https://render.com/)
 - Banco de Dados: [Neon](https://neon.com/)
 
+## 📊 Status do Serviço
+
+Acompanhe o status em tempo real: [Status da Core Tech Store](https://status.coretechstore.dedyn.io/)
+
 # Backend
 
 Camada responsável por fornecer a API REST para o frontend, gerenciando autenticação, produtos, pedidos e usuários. Estruturado por responsabilidade, com separação em controllers, services, repositories e suporte a segurança via JWT e validação de dados.
