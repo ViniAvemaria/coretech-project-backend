@@ -47,7 +47,7 @@ public class OrderService {
     public List<OrderResponse> getOrders() {
         User user = securityService.getUserFromSecurityContext();
 
-        return orderRepository.findByUser(user)
+        return orderRepository.findByUserOrderByCreatedAtDesc(user)
                 .stream()
                 .map(OrderResponse::from)
                 .toList();
