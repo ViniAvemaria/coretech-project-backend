@@ -107,11 +107,9 @@ public class AuthService {
         VerificationToken verificationToken = tokenService.validateLinkToken(token, TokenType.CONFIRM_EMAIL, id);
 
         verificationToken.setUsed(true);
-        verificationTokenRepository.save(verificationToken);
 
         User user = verificationToken.getUser();
         user.setEnabled(true);
-        userRepository.save(user);
     }
 
     public void resendConfirmation(String token, Long id) {
@@ -161,14 +159,13 @@ public class AuthService {
                     .orElseGet(() -> {
                         String confirmationToken = UUID.randomUUID().toString();
 
-                        VerificationToken newToken = VerificationToken.builder()
+                        VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
                                 .token(passwordEncoder.encode(confirmationToken))
                                 .tokenType(TokenType.CONFIRM_EMAIL)
                                 .user(user)
                                 .expiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS))
-                                .build();
+                                .build());
 
-                        verificationTokenRepository.save(newToken);
                         mailService.sendConfirmationToken(user.getEmail(), confirmationToken, newToken.getId());
                         return newToken;
                     });
@@ -179,7 +176,6 @@ public class AuthService {
                 verificationToken.setToken(passwordEncoder.encode(confirmationToken));
                 verificationToken.setExpiresAt(Instant.now().plus(confirmTokenExpirationHours, ChronoUnit.HOURS));
 
-                verificationTokenRepository.save(verificationToken);
                 mailService.sendConfirmationToken(user.getEmail(), confirmationToken, verificationToken.getId());
             }
 
@@ -201,7 +197,6 @@ public class AuthService {
         User user = refreshToken.getUser();
 
         refreshToken.setRevoked(true);
-        refreshTokenRepository.save(refreshToken);
 
         Authentication auth = new UsernamePasswordAuthenticationToken(
                 user.getEmail(),
@@ -213,12 +208,11 @@ public class AuthService {
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
     }
 
-    public void logout(String token, HttpServletResponse response) {
+    public void logout(String token) {
         RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
                 .orElseThrow(() -> new ResourceNotFoundException("Refresh token not found"));
 
         refreshToken.setRevoked(true);
-        refreshTokenRepository.save(refreshToken);
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(refreshToken.getUser()));
     }
@@ -228,14 +222,13 @@ public class AuthService {
                 .ifPresent(user -> {
                     String recoveryToken = UUID.randomUUID().toString();
 
-                    VerificationToken newToken = VerificationToken.builder()
+                    VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
                             .token(passwordEncoder.encode(recoveryToken))
                             .tokenType(TokenType.RESET_PASSWORD)
                             .user(user)
                             .expiresAt(Instant.now().plus(recoveryTokenExpirationMinutes, ChronoUnit.MINUTES))
-                            .build();
+                            .build());
 
-                    verificationTokenRepository.save(newToken);
                     mailService.sendRecoveryToken(user.getEmail(), recoveryToken, newToken.getId());
                 });
     }
@@ -243,11 +236,9 @@ public class AuthService {
     public void resetPassword(String token, Long id, String password) {
         VerificationToken recoveryToken = tokenService.validateRecoveryToken(token, id);
         recoveryToken.setUsed(true);
-        verificationTokenRepository.save(recoveryToken);
 
         User user = recoveryToken.getUser();
         user.setPassword(passwordEncoder.encode(password));
-        userRepository.save(user);
     }
 
     public void changeEmail() {
@@ -294,14 +285,13 @@ public class AuthService {
 
         String deletionToken = UUID.randomUUID().toString();
 
-        VerificationToken newToken = VerificationToken.builder()
+        VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
                 .token(passwordEncoder.encode(deletionToken))
                 .tokenType(TokenType.DELETE_ACCOUNT)
                 .user(user)
                 .expiresAt(Instant.now().plus(deleteAccountExpirationMinutes, ChronoUnit.MINUTES))
-                .build();
+                .build());
 
-        verificationTokenRepository.save(newToken);
         mailService.sendDeleteAccountToken(user.getEmail(), deletionToken, newToken.getId());
     }
 

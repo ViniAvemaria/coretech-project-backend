@@ -49,6 +49,10 @@ public class Review {
     @Column(length = 1000)
     private String comment;
 
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean edited = false;
+
     @Column(nullable = false, updatable = false)
     @CreationTimestamp
     private Instant createdAt;

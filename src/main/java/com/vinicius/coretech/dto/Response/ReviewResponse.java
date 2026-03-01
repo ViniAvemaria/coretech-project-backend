@@ -10,6 +10,7 @@ public record ReviewResponse(
         Double rating,
         String comment,
         String firstName,
+        boolean edited,
         Instant createdAt,
         Instant updatedAt
 ) {
@@ -20,6 +21,7 @@ public record ReviewResponse(
                 review.getRating(),
                 review.getComment(),
                 review.getUser() != null ? review.getUser().getFirstName() : "Deleted User",
+                review.isEdited(),
                 review.getCreatedAt(),
                 review.getUpdatedAt()
         );

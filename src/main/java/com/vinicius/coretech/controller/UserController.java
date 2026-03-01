@@ -53,7 +53,7 @@ public class UserController {
 
     @DeleteMapping
     public ResponseEntity<Void> deleteUser(@Valid @RequestBody ValidationTokenRequest request, HttpServletResponse response) {
-        userService.deleteUser(request.token(), TokenType.DELETE_ACCOUNT, request.id(), response);
+        userService.deleteUser(request.token(), TokenType.DELETE_ACCOUNT, request.id());
         tokenService.clearTokens(response);
         return ResponseEntity.noContent().build();
     }

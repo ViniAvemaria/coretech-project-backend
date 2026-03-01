@@ -112,7 +112,7 @@ public class AuthController {
             throw new BadRequestException("Refresh token cookie is missing");
         }
 
-        authService.logout(refreshToken, response);
+        authService.logout(refreshToken);
         tokenService.clearTokens(response);
         return ResponseEntity.noContent().build();
     }

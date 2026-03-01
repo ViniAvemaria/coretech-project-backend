@@ -179,8 +179,6 @@ public class ProductService {
         existing.setSpecifications(product.specifications());
         existing.setPhotoCredit(product.photoCredit());
         existing.setCategory(category);
-
-        productRepository.save(existing);
     }
 
     public void deleteProduct(Long id) {

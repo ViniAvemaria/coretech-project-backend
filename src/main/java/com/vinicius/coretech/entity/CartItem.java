@@ -1,5 +1,6 @@
 package com.vinicius.coretech.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -12,6 +13,9 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.Instant;
 
 @Entity
 @Table(name = "cart_items")
@@ -35,4 +39,8 @@ public class CartItem {
     private Product product;
 
     private Integer quantity;
+
+    @Column(nullable = false, updatable = false)
+    @CreationTimestamp
+    private Instant createdAt;
 }

@@ -70,8 +70,7 @@ public class ReviewService {
 
         existing.setComment(comment);
         existing.setRating(rating);
-
-        reviewRepository.save(existing);
+        existing.setEdited(true);
     }
 
     public void delete(Long id) {
