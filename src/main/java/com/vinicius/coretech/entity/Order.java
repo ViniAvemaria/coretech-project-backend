@@ -1,7 +1,13 @@
 package com.vinicius.coretech.entity;
 
+import com.vinicius.coretech.entity.embedded.AddressSnapshot;
+import com.vinicius.coretech.entity.enums.OrderStatus;
+import com.vinicius.coretech.entity.enums.PaymentMethod;
+import jakarta.persistence.AttributeOverride;
+import jakarta.persistence.AttributeOverrides;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -60,6 +66,23 @@ public class Order {
 
     @Column(nullable = false)
     private Double totalPrice;
+
+    @Embedded
+    @AttributeOverrides({
+            @AttributeOverride(name = "street", column = @Column(name = "shipping_street")),
+            @AttributeOverride(name = "number", column = @Column(name = "shipping_number")),
+            @AttributeOverride(name = "complement", column = @Column(name = "shipping_complement")),
+            @AttributeOverride(name = "neighborhood", column = @Column(name = "shipping_neighborhood")),
+            @AttributeOverride(name = "city", column = @Column(name = "shipping_city")),
+            @AttributeOverride(name = "state", column = @Column(name = "shipping_state")),
+            @AttributeOverride(name = "zipCode", column = @Column(name = "shipping_zip_code")),
+            @AttributeOverride(name = "country", column = @Column(name = "shipping_country"))
+    })
+    private AddressSnapshot shippingAddress;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private PaymentMethod paymentMethod;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

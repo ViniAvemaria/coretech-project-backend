@@ -3,14 +3,18 @@ package com.vinicius.coretech.service;
 import com.vinicius.coretech.dto.Request.OrderItemRequest;
 import com.vinicius.coretech.dto.Response.AdminOrderResponse;
 import com.vinicius.coretech.dto.Response.OrderResponse;
+import com.vinicius.coretech.entity.Address;
 import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.Order;
 import com.vinicius.coretech.entity.OrderItem;
-import com.vinicius.coretech.entity.OrderStatus;
 import com.vinicius.coretech.entity.Product;
 import com.vinicius.coretech.entity.User;
-import com.vinicius.coretech.exception.ConflictException;
+import com.vinicius.coretech.entity.embedded.AddressSnapshot;
+import com.vinicius.coretech.entity.enums.OrderStatus;
+import com.vinicius.coretech.entity.enums.PaymentMethod;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
+import com.vinicius.coretech.exception.UnauthorizedException;
+import com.vinicius.coretech.repository.AddressRepository;
 import com.vinicius.coretech.repository.CartRepository;
 import com.vinicius.coretech.repository.OrderRepository;
 import com.vinicius.coretech.repository.ProductRepository;
@@ -28,6 +32,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final SecurityService securityService;
+    private final AddressRepository addressRepository;
 
     @Transactional(readOnly = true)
     public OrderResponse getOrder(Long id) {
@@ -37,7 +42,7 @@ public class OrderService {
                 .orElseThrow(() -> new  ResourceNotFoundException("Order not found"));
 
         if (!order.getUser().getId().equals(user.getId())) {
-            throw new ConflictException("This order belongs to another user");
+            throw new UnauthorizedException("This order belongs to another user");
         }
 
         return OrderResponse.from(order);
@@ -62,7 +67,7 @@ public class OrderService {
     }
 
     @Transactional
-    public void create(List<OrderItemRequest> items) {
+    public void create(Long addressId, PaymentMethod paymentMethod, List<OrderItemRequest> items) {
         User user = securityService.getUserFromSecurityContext();
 
         Order order = Order.builder()
@@ -98,6 +103,13 @@ public class OrderService {
         order.setShippingAmount(shippingAmount);
         order.setTotalPrice(total);
 
+        Address address = addressRepository.findByIdAndUser(addressId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Address not found"));
+
+        order.setShippingAddress(AddressSnapshot.from(address));
+
+        order.setPaymentMethod(paymentMethod);
+
         orderRepository.save(order);
 
         Cart cart = cartRepository.findByUser(user)
@@ -113,7 +125,7 @@ public class OrderService {
                 .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         if (!order.getUser().getId().equals(user.getId())) {
-            throw new ConflictException("This order belongs to another user");
+            throw new UnauthorizedException("This order belongs to another user");
         }
 
         if (order.getStatus() != OrderStatus.PENDING &&

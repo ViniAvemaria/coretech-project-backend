@@ -4,12 +4,13 @@ import com.vinicius.coretech.dto.Request.OrderRequest;
 import com.vinicius.coretech.dto.Response.AdminOrderResponse;
 import com.vinicius.coretech.dto.Response.ApiResponse;
 import com.vinicius.coretech.dto.Response.OrderResponse;
-import com.vinicius.coretech.entity.OrderStatus;
+import com.vinicius.coretech.entity.enums.OrderStatus;
 import com.vinicius.coretech.service.OrderService;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -46,8 +47,8 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<Void> create(@Valid @RequestBody OrderRequest request) {
-        orderService.create(request.items());
-        return ResponseEntity.noContent().build();
+        orderService.create(request.addressId(), request.paymentMethod(), request.items());
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/{id}/cancel")

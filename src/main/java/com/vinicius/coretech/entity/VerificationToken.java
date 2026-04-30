@@ -1,5 +1,6 @@
 package com.vinicius.coretech.entity;
 
+import com.vinicius.coretech.entity.enums.TokenType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

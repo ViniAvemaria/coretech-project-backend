@@ -1,6 +1,6 @@
 package com.vinicius.coretech.repository;
 
-import com.vinicius.coretech.entity.TokenType;
+import com.vinicius.coretech.entity.enums.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.entity.VerificationToken;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,7 +1,7 @@
 package com.vinicius.coretech.dto.Response;
 
 import com.vinicius.coretech.entity.Order;
-import com.vinicius.coretech.entity.OrderStatus;
+import com.vinicius.coretech.entity.enums.OrderStatus;
 
 import java.time.Instant;
 import java.util.List;

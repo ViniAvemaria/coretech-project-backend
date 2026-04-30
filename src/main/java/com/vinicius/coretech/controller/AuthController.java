@@ -5,7 +5,7 @@ import com.vinicius.coretech.dto.Request.RecoverPasswordRequest;
 import com.vinicius.coretech.dto.Request.RegisterUserRequest;
 import com.vinicius.coretech.dto.Request.ResetPasswordRequest;
 import com.vinicius.coretech.dto.Request.ValidationTokenRequest;
-import com.vinicius.coretech.entity.TokenType;
+import com.vinicius.coretech.entity.enums.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ConflictException;

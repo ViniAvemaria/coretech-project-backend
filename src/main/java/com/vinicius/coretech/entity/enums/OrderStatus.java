@@ -1,4 +1,4 @@
-package com.vinicius.coretech.entity;
+package com.vinicius.coretech.entity.enums;
 
 public enum OrderStatus {
     PENDING,

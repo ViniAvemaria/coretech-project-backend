@@ -11,8 +11,7 @@ public record AuthUserResponse(
         String firstName,
         String lastName,
         String email,
-        Set<String> roles,
-        String accessToken
+        Set<String> roles
 ) {
 
     public static AuthUserResponse from(User user) {
@@ -24,22 +23,7 @@ public record AuthUserResponse(
                 user.getAuthorities()
                         .stream()
                         .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toSet()),
-                null
-        );
-    }
-
-    public static AuthUserResponse from(User user, String accessToken) {
-        return new AuthUserResponse(
-                user.getId(),
-                user.getFirstName(),
-                user.getLastName(),
-                user.getEmail(),
-                user.getAuthorities()
-                        .stream()
-                        .map(GrantedAuthority::getAuthority)
-                        .collect(Collectors.toSet()),
-                accessToken
+                        .collect(Collectors.toSet())
         );
     }
 }
