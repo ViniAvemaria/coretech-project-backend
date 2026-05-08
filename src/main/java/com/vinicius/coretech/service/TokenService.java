@@ -1,9 +1,9 @@
 package com.vinicius.coretech.service;
 
 import com.vinicius.coretech.entity.RefreshToken;
-import com.vinicius.coretech.entity.enums.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.entity.VerificationToken;
+import com.vinicius.coretech.entity.enums.TokenType;
 import com.vinicius.coretech.exception.BadRequestException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.repository.RefreshTokenRepository;
@@ -12,7 +12,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseCookie;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
@@ -47,10 +46,10 @@ public class TokenService {
     private String cookieDomain;
 
     @Transactional
-    public void generateTokens(Authentication auth, HttpServletResponse response, User user) {
+    public void generateTokens(HttpServletResponse response, User user) {
         Instant now = Instant.now();
 
-        String scope = auth.getAuthorities().stream()
+        String scope = user.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.joining(" "));
 
@@ -58,7 +57,7 @@ public class TokenService {
                 .issuer("self")
                 .issuedAt(now)
                 .expiresAt(now.plus(accessTokenExpirationMinutes, ChronoUnit.MINUTES))
-                .subject(auth.getName())
+                .subject(user.getEmail())
                 .claim("roles", scope)
                 .build();
         String accessToken = jwtEncoder.encode(JwtEncoderParameters.from(accessClaims)).getTokenValue();
@@ -79,7 +78,7 @@ public class TokenService {
                 .issuer("self")
                 .issuedAt(now)
                 .expiresAt(refreshTokenExpiration)
-                .subject(auth.getName())
+                .subject(user.getEmail())
                 .build();
         String refreshToken = jwtEncoder.encode(JwtEncoderParameters.from(refreshClaims)).getTokenValue();
 

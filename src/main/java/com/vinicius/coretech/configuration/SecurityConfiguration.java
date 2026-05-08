@@ -7,6 +7,7 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import com.vinicius.coretech.configuration.security.CookieBearerTokenResolver;
+import com.vinicius.coretech.configuration.security.OAuth2SuccessHandler;
 import com.vinicius.coretech.configuration.security.RSAKeyProperties;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -54,7 +55,9 @@ public class SecurityConfiguration {
             "/h2-console/**",
             "/swagger-ui/**",
             "/v3/api-docs/**",
-            "/actuator/health"
+            "/actuator/health",
+            "/login/**",
+            "/oauth2/**"
     };
 
     private final RSAKeyProperties keys;
@@ -73,7 +76,7 @@ public class SecurityConfiguration {
     }
 
     @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) {
+    SecurityFilterChain filterChain(HttpSecurity http, OAuth2SuccessHandler oAuth2SuccessHandler) {
         return http
                 .csrf(csrf -> csrf.ignoringRequestMatchers(PUBLIC_ENDPOINTS))
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin))
@@ -97,6 +100,9 @@ public class SecurityConfiguration {
                                 .decoder(jwtDecoder())
                         )
                         .bearerTokenResolver(new CookieBearerTokenResolver())
+                )
+                .oauth2Login(oauth -> oauth
+                        .successHandler(oAuth2SuccessHandler)
                 )
                 .build();
     }

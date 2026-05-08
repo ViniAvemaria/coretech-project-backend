@@ -1,6 +1,7 @@
 package com.vinicius.coretech.dto.Response;
 
 import com.vinicius.coretech.entity.User;
+import com.vinicius.coretech.entity.enums.AuthProvider;
 import org.springframework.security.core.GrantedAuthority;
 
 import java.util.Set;
@@ -11,6 +12,7 @@ public record AuthUserResponse(
         String firstName,
         String lastName,
         String email,
+        AuthProvider authProvider,
         Set<String> roles
 ) {
 
@@ -20,6 +22,7 @@ public record AuthUserResponse(
                 user.getFirstName(),
                 user.getLastName(),
                 user.getEmail(),
+                user.getAuthProvider(),
                 user.getAuthorities()
                         .stream()
                         .map(GrantedAuthority::getAuthority)

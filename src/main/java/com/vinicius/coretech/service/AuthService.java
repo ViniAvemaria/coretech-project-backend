@@ -3,10 +3,12 @@ package com.vinicius.coretech.service;
 import com.vinicius.coretech.entity.Cart;
 import com.vinicius.coretech.entity.RefreshToken;
 import com.vinicius.coretech.entity.Role;
-import com.vinicius.coretech.entity.enums.TokenType;
 import com.vinicius.coretech.entity.User;
 import com.vinicius.coretech.entity.VerificationToken;
+import com.vinicius.coretech.entity.enums.AuthProvider;
+import com.vinicius.coretech.entity.enums.TokenType;
 import com.vinicius.coretech.exception.ConflictException;
+import com.vinicius.coretech.exception.ForbiddenException;
 import com.vinicius.coretech.exception.ResourceNotFoundException;
 import com.vinicius.coretech.exception.RoleNotFoundException;
 import com.vinicius.coretech.exception.UnauthorizedException;
@@ -21,7 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -135,13 +136,45 @@ public class AuthService {
         mailService.sendConfirmationToken(user.getEmail(), confirmationToken, newToken.getId());
     }
 
+    public void googleLogin(String firstName, String lastName, String email, HttpServletResponse response){
+
+        User user = userRepository.findByEmail(email)
+                .orElseGet(() -> {
+                    Role userRole = roleRepository.findByAuthority("USER")
+                            .orElseThrow(() ->
+                                    new RoleNotFoundException("USER role not found"));
+
+                    User newUser = userRepository.save(User.builder()
+                            .firstName(firstName)
+                            .lastName(lastName)
+                            .email(email)
+                            .password("")
+                            .authorities(Set.of(userRole))
+                            .authProvider(AuthProvider.GOOGLE)
+                            .enabled(true)
+                            .build());
+
+                    cartRepository.save(Cart.builder()
+                            .user(newUser)
+                            .build());
+
+                    return newUser;
+                });
+
+        tokenService.generateTokens(response, user);
+    }
+
     @Transactional(noRollbackFor = DisabledException.class)
     public void login(String email, String password, HttpServletResponse response) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UnauthorizedException("Email or password incorrect"));
 
+        if(user.getAuthProvider().equals(AuthProvider.GOOGLE)) {
+            throw new UnauthorizedException("This account uses Google sign-in");
+        }
+
         try {
-            Authentication auth = authenticationManager.authenticate(
+            authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(email, password)
             );
 
@@ -151,7 +184,7 @@ public class AuthService {
             }
             refreshTokenRepository.saveAll(activeTokens);
 
-            tokenService.generateTokens(auth, response, user);
+            tokenService.generateTokens(response, user);
 
             deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
         } catch (DisabledException e) {
@@ -198,12 +231,7 @@ public class AuthService {
 
         refreshToken.setRevoked(true);
 
-        Authentication auth = new UsernamePasswordAuthenticationToken(
-                user.getEmail(),
-                null,
-                user.getAuthorities()
-        );
-        tokenService.generateTokens(auth, response, user);
+        tokenService.generateTokens(response, user);
 
         deleteRevokedTokens(refreshTokenRepository.findAllByUserOrderByCreatedAtAsc(user));
     }
@@ -220,6 +248,11 @@ public class AuthService {
     public void recoverPassword(String email) {
         userRepository.findByEmail(email)
                 .ifPresent(user -> {
+
+                    if(user.getAuthProvider().equals(AuthProvider.GOOGLE)) {
+                        throw new ForbiddenException("This account uses Google sign-in");
+                    }
+
                     String recoveryToken = UUID.randomUUID().toString();
 
                     VerificationToken newToken = verificationTokenRepository.save(VerificationToken.builder()
@@ -244,6 +277,10 @@ public class AuthService {
     public void changeEmail() {
         User user =  securityService.getUserFromSecurityContext();
 
+        if(user.getAuthProvider().equals(AuthProvider.GOOGLE)) {
+            throw new ForbiddenException("Google accounts cannot change email");
+        }
+
         verificationTokenRepository.findByUserAndTokenType(user, TokenType.CHANGE_EMAIL)
                 .ifPresent(verificationTokenRepository::delete);
 
@@ -261,6 +298,10 @@ public class AuthService {
 
     public void changePassword() {
         User user =  securityService.getUserFromSecurityContext();
+
+        if(user.getAuthProvider().equals(AuthProvider.GOOGLE)) {
+            throw new ForbiddenException("Google accounts cannot change password");
+        }
 
         verificationTokenRepository.findByUserAndTokenType(user, TokenType.CHANGE_PASSWORD)
                 .ifPresent(verificationTokenRepository::delete);
@@ -296,12 +337,10 @@ public class AuthService {
     }
 
     private void deleteRevokedTokens(List<RefreshToken> userTokens) {
-        if (userTokens.size() > 3) {
-            List<RefreshToken> toDelete = userTokens.stream()
-                    .filter(RefreshToken::isRevoked)
-                    .limit(userTokens.size() - 3)
-                    .toList();
-            refreshTokenRepository.deleteAll(toDelete);
-        }
+        if (userTokens.size() <= 3) return;
+
+        refreshTokenRepository.deleteAll(
+                userTokens.subList(0, userTokens.size() - 3)
+        );
     }
 }
